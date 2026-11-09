@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>SpeakEasy — WebXR</title>
 <style>
 body,
@@ -20,6 +20,7 @@ html {
 	color: #171717;
 }
 #c {
+	touch-action: none;
 	position: fixed;
 	inset: 0;
 	display: block;
@@ -244,8 +245,6 @@ body.wheel-open #help {
 	opacity: 0;
 	pointer-events: none;
 }
-@media (prefers-reduced-motion: reduce) {
-}
 #arCam {
 	position: fixed;
 	inset: 0;
@@ -267,8 +266,17 @@ body.ar-on #c {
 	place-items: center;
 	background: #0006;
 }
-#modal.open {
+#modal.open,
+#consent.open {
 	display: grid;
+}
+#consent {
+	position: fixed;
+	inset: 0;
+	z-index: 55;
+	display: none;
+	place-items: center;
+	background: #0008;
 }
 .card {
 	background: #fff;
@@ -309,6 +317,18 @@ body.ar-on #c {
 	color: #666;
 	line-height: 1.4;
 }
+#touchUI{display:none}
+body.touch-on #touchUI{display:block}
+#touchUI,#touchUI *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none}
+#tJoy{position:fixed;left:max(22px,env(safe-area-inset-left));bottom:max(26px,env(safe-area-inset-bottom));width:128px;height:128px;border-radius:50%;background:#ffffff80;border:2px solid #0004;z-index:25;backdrop-filter:blur(4px)}
+#tKnob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:#111c;box-shadow:0 2px 8px #0004}
+#tActs{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(max(26px,env(safe-area-inset-bottom)) + 56px);z-index:25;display:flex;flex-direction:column;gap:12px;align-items:flex-end}
+#tActs .row{display:flex;gap:12px}
+#tActs button{min-width:62px;height:62px;border-radius:31px;border:1px solid #0003;background:#ffffffe6;font-size:15px;font-weight:700;padding:0 14px;box-shadow:0 2px 10px #0003;color:#111}
+#tActs button.on{background:#111;color:#fff}
+#tActs button.hide{display:none}
+#tActs button:active{transform:scale(.94)}
+#tHint{position:fixed;left:50%;transform:translateX(-50%);bottom:max(6px,env(safe-area-inset-bottom));z-index:25;font-size:11px;color:#444;background:#fffc;border-radius:8px;padding:2px 8px;pointer-events:none}
 #err {
 	position: fixed;
 	top: 64px;
@@ -334,7 +354,7 @@ body.ar-on #c {
 </head>
 <body><video id="arCam" autoplay playsinline muted></video><video id="arSnap" autoplay playsinline muted style="position:fixed;left:0;bottom:0;width:8px;height:8px;opacity:.02;pointer-events:none;z-index:-1"></video><canvas id="c"></canvas><div id="dptr"></div>
 <button id="cog" title="Settings" aria-label="Settings">⚙️</button>
- <button id="treeBtn" title="History — past Spark &amp; kid answers" aria-label="History — past Spark and kid answers">🌲</button>
+ <button id="treeBtn" title="History — past Spark answers" aria-label="History — past Spark answers">🌲</button>
  <button id="help" title="Tips" aria-label="Tips">?</button>
 <div id="hud"><button id="hudX" aria-label="Close tips">✕</button>
 <b>SpeakEasy</b> — tap a topic for details<details name="hudsec"><summary>🎡 Emoji wheel</summary>
@@ -343,23 +363,20 @@ body.ar-on #c {
 <details name="hudsec"><summary>🧚 Ask Spark</summary>
 <p>With the wheel <b>closed</b>, <b>hold the index trigger on its own</b> (desktop: hold <b>L</b>), speak your question, then let go. A quick tap still opens the wheel. A ball of light forms while you speak, then the fairy emerges and answers in emoji. It does <i>not</i> translate — it answers, using what you are looking at (in AR, the headset-camera view).</p>
 </details>
-<details name="hudsec"><summary>🧒 Kid avatar</summary>
-<p>The <b>short kid avatar</b> wanders around the platform on its own. Every so often it <b>notices you</b>, turns its head, then strolls over slowly to say hi (sometimes with a wave), hangs around for a few seconds and drifts off again. <b>Face it</b> (it will come to you, or walk up to it), then send it some emoji — close your emoji wheel to send, or speak a voice translation. The kid receives your symbols <i>plus what the avatar sees from its own eyes</i> and replies as a young child in VR would. Watch: its own emoji wheel opens in front of it, its arm drags the golden ball to each symbol in turn — at a different speed every pick, sometimes eager, sometimes dawdling — its face becomes each emoji as it picks it (smile, frown, surprise, sleepy…), each pick plays that emoji's own single note on its wheel, pitched just like yours, with the same rising/falling shimmer when its wheel opens and closes, and the answer pops up above its head.</p>
-</details>
 <details name="hudsec"><summary>🎙️ Translate to emoji</summary>
-<p>Hold <b>index + grip</b> together on one controller with the wheel closed (desktop: hold <b>V</b>), or <b>hold the trigger of the wheel hand while the wheel is open</b> (desktop: hold <b>L</b> with the wheel open). Speak, then let go to send. Wave your free hand through the transcript box (desktop: <b>Esc</b>) to cancel.</p>
+<p><b>Hands only:</b> with the wheel closed, <b>pinch both index fingers together and hold</b>. Controllers: hold <b>index + grip</b> together on one controller with the wheel closed (desktop: hold <b>V</b>), or <b>hold the trigger of the wheel hand while the wheel is open</b> (desktop: hold <b>L</b> with the wheel open). Speak, then let go to send. Wave your free hand through the transcript box (desktop: <b>Esc</b>) to cancel.</p>
 </details>
 <details name="hudsec"><summary>📷 AR / VR</summary>
 <p>Tap <b>AR Mode</b> at the top (or the 📷 button in-headset) to switch between the virtual room and the real world through the headset cameras, without leaving the headset. Ask Spark uses that real-world view. <b>Room fit:</b> while in AR the headset scans your walls, ceiling height, tables, couches, beds, doors and windows. When you leave AR the virtual room <b>resizes to your real space</b> with stand-ins for that furniture.</p>
 </details>
 <details name="hudsec"><summary>🕹️ Moving &amp; pages</summary>
-<p>The <b>left thumbstick</b> (desktop: <b>WASD</b>, drag to look) walks you around, even with the wheel open. <b>In AR mode the thumbstick (and hand-gesture walking, snap-turn and jump) is switched off</b> — you simply walk around your real home, and Spark stays inside your real walls and walks around your furniture. The <b>right thumbstick left/right</b> (desktop: <b>Q/E</b> or arrows) flips wheel pages, or snap-turns you when the wheel is closed. <b>A</b> (right controller) / <b>Space</b> (desktop) jumps. <b>B / Y</b> closes the wheel without sending. <b>Hands only:</b> beckon with a "come here" motion to walk forward; push an open palm away to walk backward; swipe your hand left or right through the air to turn; flick both palms up to jump. Pinches are for the wheel and Spark.</p>
+<p>The <b>left thumbstick</b> (desktop: <b>WASD</b> or <b>arrow keys</b> to walk, <b>Shift</b> to hurry, <b>drag the mouse</b> to look) walks you around, even with the wheel open. <b>In AR mode the thumbstick (and hand-gesture walking, snap-turn and jump) is switched off</b> — you simply walk around your real home, and Spark stays inside your real walls and walks around your furniture. The <b>right thumbstick left/right</b> (desktop: <b>Q/E</b>, arrows or the <b>mouse wheel</b> while the wheel is open) flips wheel pages, or snap-turns you when the wheel is closed. <b>A</b> (right controller) / <b>Space</b> (desktop) jumps. <b>B / Y</b> (desktop: <b>Esc</b>) closes the wheel without sending; desktop <b>Enter</b> sends, <b>Backspace</b> or <b>right-click</b> removes the last emoji. <b>Hands only:</b> with the wheel open, <b>pinch the middle fingers of both hands</b> to close it without sending, and <b>middle-pinch your free hand and swipe left/right</b> to flip pages. Beckon with a "come here" motion to walk forward; push an open palm away to walk backward; swipe your hand left or right through the air to turn; flick both palms up to jump. Pinches are for the wheel and Spark.</p>
 </details>
 <details name="hudsec"><summary>⚙️ Settings &amp; hands</summary>
 <p>In VR, point at ⚙️ at the top of your view, pull the trigger, then tap ✏️ to type your API key with the Meta keyboard (Meta Quest Browser 26.1+). With hand tracking, pinch index = trigger and pinch middle finger = grip. On desktop your right arm points wherever the mouse cursor points.</p>
 </details>
-<details name="hudsec"><summary>🙂 Face, eyes &amp; hands</summary>
-<p>Your avatar's <b>mouth moves as you talk</b> (microphone lip-sync, with wide smiles on "ee"/"s" sounds and rounded lips on "oo"), it <b>blinks</b>, its <b>eyes follow</b> the wheel or fairy, and the <b>brows and smile react</b> to the emoji you send. If your headset exposes WebXR face tracking (e.g. Quest Pro) the real expression data takes over. <b>Fingers</b> curl with your trigger, grip and thumb. Sound effects can be switched off and on there too.</p>
+<details name="hudsec"><summary>🙂 Your avatar</summary>
+<p>You are a <b>stick man</b>. Its mouth is a <b>line</b> that turns into an <b>O</b> while you speak (microphone lip-sync; headsets with WebXR face tracking drive it directly). Arms follow your controllers or hands. Its <b>face shows the emotion of the emoji you send</b> — smiles, frowns, angry brows, tears, blushing, heart eyes, sunglasses and more — stepping through your message in time with the symbols, then relaxing. Sound effects can be switched off and on in settings.</p>
 </details>
 <div id="seq"></div>
 <div id="status">Drift around the white platform as it flies through space, and check yourself out in the mirror. WASD / left stick moves, drag looks around.</div>
@@ -368,14 +385,15 @@ body.ar-on #c {
  <button id="vrBtn">Enter VR</button>
 <div id="err"></div>
 <div id="modal"><div class="card"><h2 style="margin:0">Settings — Meta / Muse APIs</h2><p class="note">One Meta API key is used for both Muse Voice Transcribe and Muse Spark. It is stored only in this browser (<code>localStorage</code>), never in this file. With a key: speech goes to Muse Voice Transcribe, the text goes to Muse Spark. Without a key, voice falls back to the headset's built-in speech recognition (the same engine as the keyboard's mic button, started automatically with no keyboard popping up) and Spark falls back to a small local phrase translator.</p>
-<label>Meta API key (Muse Voice Transcribe + Muse Spark)</label><input id="kMeta" type="password" autocomplete="off" placeholder="Paste Meta API key"> <label>Muse Voice Transcribe endpoint</label><input id="kTransUrl"> <label>Muse Spark endpoint</label><input id="kSparkUrl"> <label>Muse Spark model</label><input id="kSparkModel"> <label style="display:flex;gap:8px;align-items:center;font-weight:600"><input id="kSfx" type="checkbox" style="width:auto"> Sound effects (emoji notes, wheel shimmer, fairy chime)</label><div><button id="saveSet">Save</button>
+<label>Meta API key (Muse Voice Transcribe + Muse Spark)</label><input id="kMeta" type="password" autocomplete="off" placeholder="Paste Meta API key"> <label>Muse Voice Transcribe endpoint</label><input id="kTransUrl"> <label>Muse Spark endpoint</label><input id="kSparkUrl"> <label>Muse Spark model</label><input id="kSparkModel"> <label style="display:flex;gap:8px;align-items:center;font-weight:600"><input id="kSfx" type="checkbox" style="width:auto"> Sound effects (emoji notes, wheel shimmer, fairy chime)</label><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input id="kCloud" type="checkbox" style="width:auto"> Allow cloud voice / Spark (sends mic audio and camera or scene images)</label><div><button id="saveSet">Save</button>
  <button id="closeSet" class="ghost">Close</button>
  <button id="clearSet" class="ghost">Clear key</button>
 </div>
 <p class="note">Spark receives one message: for translation, a short instruction to translate what you said into an emoji sequence of 12 or less; for Ask Spark (trigger-hold, wheel closed), an instruction to actually answer your question helpfully as a separate assistant, using the scene image for context. Lewd or hateful content is not translated.</p>
 </div>
 </div>
-<div id="hist" role="dialog" aria-modal="true" aria-label="Past Spark and kid answers"><div class="card histCard"><h2>🌲 Past answers</h2><p class="note">Every answer from Spark and the kid, newest first — with the symbols or question that was sent to get it. Saved in this browser.</p>
+<div id="consent" role="dialog" aria-modal="true" aria-label="Cloud features"><div class="card"><h2 style="margin:0">Before you enter</h2><p class="note">SpeakEasy can use cloud AI for voice and Ask Spark. If you allow it: <b>your microphone audio</b> is sent for transcription, the <b>text</b> goes to Muse Spark, and for Ask Spark a <b>picture of what you are looking at</b> (in AR, a headset camera frame) is attached. These go to this app's proxy server (or Meta directly if you add your own key in settings). Nothing is sent until you hold the trigger to speak.</p><p class="note">If you stay offline, voice uses the headset's built-in speech recognition and Spark uses a small local phrase translator, and no audio or images leave this page. You can change this later in settings.</p><div><button id="consentYes">Allow cloud features</button> <button id="consentNo" class="ghost">Stay offline</button></div></div></div>
+<div id="hist" role="dialog" aria-modal="true" aria-label="Past Spark answers"><div class="card histCard"><h2>🌲 Past answers</h2><p class="note">Every answer from Spark, newest first — with the symbols or question that was sent to get it. Saved in this browser.</p>
 <div id="histList"></div>
 <div><button id="histClose">Close</button>
  <button id="histClear" class="ghost">Clear history</button>
@@ -670,24 +688,32 @@ await (async function () {
 		DEFAULT_MUSE_ENDPOINTS.includes(localStorage.getItem(e)) && localStorage.removeItem(e);
 	const urlParams = new URLSearchParams(window.location.search),
 		manualConfig = window.MANUAL_CONFIG || {},
-		customKey = urlParams.get("key") || manualConfig.META_API_KEY || localStorage.getItem("museMetaApiKey") || "",
+		customKey = manualConfig.META_API_KEY || localStorage.getItem("museMetaApiKey") || "",
 		defaultProxy = manualConfig.PROXY_URL || "https://speakeasy-proxy.theslowhil.workers.dev",
-		activeProxy = customKey ? (urlParams.get("proxy") || "") : (urlParams.get("proxy") || defaultProxy),
+		activeProxy = customKey ? "" : defaultProxy,
 		settings = {
 			key: customKey,
 			proxyUrl: activeProxy,
 			transUrl: customKey
-				? (urlParams.get("transUrl") || manualConfig.TRANSCRIBE_URL || localStorage.getItem("museTransUrl") || DEFAULT_TRANSCRIBE_URL)
+				? (manualConfig.TRANSCRIBE_URL || localStorage.getItem("museTransUrl") || DEFAULT_TRANSCRIBE_URL)
 				: (activeProxy || DEFAULT_TRANSCRIBE_URL),
 			sparkUrl: customKey
-				? (urlParams.get("sparkUrl") || manualConfig.SPARK_URL || localStorage.getItem("museSparkUrl") || LEGACY_SPARK_URL)
+				? (manualConfig.SPARK_URL || localStorage.getItem("museSparkUrl") || LEGACY_SPARK_URL)
 				: (activeProxy || LEGACY_SPARK_URL),
 			model:
-				urlParams.get("model") ||
 				manualConfig.SPARK_MODEL ||
 				localStorage.getItem("museSparkModel") ||
 				"muse-spark-1.3",
 		};
+	let cloudConsent = !1;
+	const consentAnswered = () => {
+		try { return localStorage.getItem("cloudConsentV1") !== null; } catch { return false; }
+	};
+	try { cloudConsent = localStorage.getItem("cloudConsentV1") === "1"; } catch {}
+	const setCloudConsent = (v) => {
+		cloudConsent = !!v;
+		try { localStorage.setItem("cloudConsentV1", v ? "1" : "0"); } catch {}
+	};
 	let sfxEnabled = !0;
 	try {
 		sfxEnabled = localStorage.getItem("sfxOn") !== "0";
@@ -698,6 +724,7 @@ await (async function () {
 		(byId("kSparkUrl").value = settings.sparkUrl),
 		(byId("kSparkModel").value = settings.model),
 		(byId("kSfx").checked = sfxEnabled),
+		(byId("kCloud").checked = cloudConsent),
 		(byId("kSfx").onchange = () => setSfxEnabled(byId("kSfx").checked)),
 		(byId("help").onclick = () => byId("hud").classList.toggle("open")),
 		(byId("hudX").onclick = () => byId("hud").classList.remove("open")),
@@ -707,6 +734,7 @@ await (async function () {
 			byId("kMeta").value = "";
 		}),
 		(byId("saveSet").onclick = () => {
+			setCloudConsent(byId("kCloud").checked);
 			((settings.key = byId("kMeta").value.trim()),
 				(settings.proxyUrl = settings.key ? "" : (manualConfig.PROXY_URL || "https://speakeasy-proxy.theslowhil.workers.dev")),
 				(settings.transUrl = byId("kTransUrl").value.trim() || (settings.key ? DEFAULT_TRANSCRIBE_URL : settings.proxyUrl)),
@@ -743,7 +771,7 @@ await (async function () {
 		if (e) {
 			if (!answerHistory.length) {
 				e.innerHTML =
-					'<p class="note">No answers yet. Ask Spark (hold the trigger, wheel closed) or send the kid some emoji, then open 🌲 to see them here.</p>';
+					'<p class="note">No answers yet. Ask Spark (hold the trigger, wheel closed), then open 🌲 to see them here.</p>';
 				return;
 			}
 			e.innerHTML = answerHistory
@@ -1284,7 +1312,7 @@ await (async function () {
 			((sunLight.shadow.bias = -4e-4), (sunLight.shadow.normalBias = 0.02), (sunLight.shadow.radius = 3));
 			scene.add(sunLight, sunLight.target);
 			sunLight.position.copy(sunDir).multiplyScalar(40);
-			// Bounce light: sunlight reflecting off the platform back up onto the kid/objects.
+			// Bounce light: sunlight reflecting off the platform back up onto the objects.
 			// Strength = sun intensity x sun elevation x floor albedo x coverage; colour = sunlit floor colour.
 			const floorCol = new THREE.Color(14474458),
 				bounceCol = floorCol.clone().multiply(new THREE.Color(16774880)),
@@ -1403,549 +1431,526 @@ await (async function () {
 			segmentDirection.copy(n).sub(t).normalize(),
 			e.quaternion.setFromUnitVectors(unitY, segmentDirection));
 	}
-	function buildAvatar() {
-		const e = new Group(),
-			t = new MeshStandardMaterial({
-				color: 15913915,
-				roughness: 0.6,
-			}),
-			n = new MeshStandardMaterial({
-				color: 14922903,
-				roughness: 0.65,
-			}),
-			o = new MeshStandardMaterial({
-				color: 7031342,
-				roughness: 0.95,
-			}),
-			a = new MeshStandardMaterial({
-				color: 8225159,
-				roughness: 0.92,
-			}),
-			r = new MeshStandardMaterial({
-				color: 3428463,
-				roughness: 0.85,
-			}),
-			s = new MeshStandardMaterial({
-				color: 2302758,
-				roughness: 0.55,
-			}),
-			l = new MeshStandardMaterial({
-				color: 15263456,
-				roughness: 0.9,
-			}),
-			i = new MeshStandardMaterial({
-				color: 14211288,
-				roughness: 0.9,
-			}),
-			c = new MeshStandardMaterial({
-				color: 2775702,
-				roughness: 0.25,
-			}),
-			d = new MeshBasicMaterial({
-				color: 329226,
-			}),
-			h = new MeshStandardMaterial({
-				color: 2758924,
-				roughness: 0.9,
-			}),
-			u = new MeshStandardMaterial({
-				color: 16053490,
-				roughness: 0.3,
-			}),
-			b = new MeshStandardMaterial({
-				color: 15921904,
-				roughness: 0.95,
-			}),
-			f = new MeshStandardMaterial({
-				color: 10634576,
-				roughness: 0.55,
-			}),
-			w = (j) => ((j.castShadow = !0), e.add(j), j),
-			x = (j, K, ge) => w(new Mesh(new CylinderGeometry(j, K, 1, 18), ge)),
-			M = (j, K) => w(new Mesh(new SphereGeometry(j, 18, 14), K)),
-			S = (j, K) => {
-				const ge = new Mesh(
-					new THREE.LatheGeometry(
-						j.map(($) => new Vector2($[0], $[1])),
-						28,
-					),
-					K,
-				);
-				return ((ge.castShadow = !0), e.add(ge), ge);
-			},
-			A = S(
-				[
-					[0.001, 0.84],
-					[0.158, 0.85],
-					[0.162, 0.9],
-					[0.16, 1],
-					[0.156, 1.1],
-					[0.156, 1.2],
-					[0.16, 1.3],
-					[0.158, 1.36],
-					[0.15, 1.4],
-					[0.128, 1.437],
-					[0.095, 1.468],
-					[0.055, 1.5],
-					[0.001, 1.51],
-				],
-				a,
-			),
-			P = S(
-				[
-					[0.001, 0.84],
-					[0.11, 0.86],
-					[0.148, 0.94],
-					[0.142, 1.01],
-					[0.001, 1.03],
-				],
-				r,
-			),
-			L = new Group();
-		e.add(L);
-		const O = (j) => ((j.castShadow = !0), L.add(j), j),
-			z = O(new Mesh(new TorusGeometry(0.088, 0.027, 12, 32), l));
-		((z.rotation.x = Math.PI / 2), z.scale.set(1.08, 1, 1), z.position.set(0, 1.478, 0.012));
-		const R = O(
-			new Mesh(
-				new TorusGeometry(0.066, 0.012, 8, 28),
-				new MeshStandardMaterial({
-					color: 14079181,
-					roughness: 0.95,
-				}),
-			),
-		);
-		((R.rotation.x = Math.PI / 2), R.scale.set(1.05, 1, 1), R.position.set(0, 1.49, 0.012));
-		const T = O(new Mesh(new SphereGeometry(0.075, 18, 12), a));
-		(T.scale.set(1.35, 0.55, 0.62),
-			T.position.set(0, 1.445, 0.098),
-			(() => {
-				const j = [
-						[1.3, 0.16],
-						[1.38, 0.16],
-						[1.46, 0.134],
-						[1.5, 0.055],
-					],
-					K = (ye) => {
-						for (let Ue = 0; Ue < j.length - 1; Ue++) {
-							const [Te, tt] = j[Ue],
-								[dt, Mt] = j[Ue + 1];
-							if (ye <= dt) return tt + (Mt - tt) * Math.max(0, (ye - Te) / (dt - Te));
-						}
-						return 0.055;
-					},
-					ge = [],
-					$ = [];
-				for (let ye = 0; ye <= 12; ye++) {
-					const Ue = 1.28 + (0.19799999999999995 * ye) / 12,
-						Te = (ye / 12) * 0.08;
-					for (let tt = 0; tt <= 8; tt++) {
-						const dt = (2 * Te * tt) / 8 - Te,
-							Mt = K(Ue) + 0.006,
-							ht = dt / 1.12;
-						ge.push(dt, Ue, -Math.sqrt(Math.max(Mt * Mt - ht * ht, 1e-6)));
-					}
-				}
-				for (let ye = 0; ye < 12; ye++)
-					for (let Ue = 0; Ue < 8; Ue++) {
-						const Te = 9 * ye + Ue,
-							tt = Te + 1,
-							dt = Te + 8 + 1;
-						$.push(Te, dt, tt, tt, dt, dt + 1);
-					}
-				const Me = new BufferGeometry();
-				(Me.setAttribute("position", new THREE.Float32BufferAttribute(ge, 3)),
-					Me.setIndex($),
-					Me.computeVertexNormals(),
-					O(
-						new Mesh(
-							Me,
-							new MeshStandardMaterial({
-								color: 15263456,
-								roughness: 0.9,
-								side: DoubleSide,
-							}),
-						),
-					));
-			})(),
-			O(new Mesh(new BoxGeometry(0.008, 0.38, 0.006), i)).position.set(0, 1.185, -0.162),
-			O(
-				new Mesh(
-					new BoxGeometry(0.012, 0.022, 0.006),
-					new MeshStandardMaterial({
-						color: 12434877,
-						roughness: 0.35,
-						metalness: 0.7,
-					}),
-				),
-			).position.set(0, 1.365, -0.166));
-		for (const j of [-1, 1]) {
-			const K = O(new Mesh(new CylinderGeometry(0.004, 0.004, 0.11, 6), i));
-			(K.position.set(0.028 * j, 1.4, -0.16),
-				(K.rotation.x = 0.18),
-				(K.rotation.z = 0.12 * j),
-				O(new Mesh(new SphereGeometry(0.007, 8, 8), i)).position.set(0.034 * j, 1.345, -0.166));
-		}
-		const V = O(new Mesh(new BoxGeometry(0.2, 0.085, 0.018), a));
-		(V.position.set(0, 1, -0.158), (V.rotation.x = -0.08));
-		const J = O(new Mesh(new TorusGeometry(0.16, 0.014, 8, 24), a));
-		(J.scale.set(1.12, 1, 1), (J.rotation.x = Math.PI / 2), (J.position.y = 0.875));
-		const I = w(new Mesh(new CylinderGeometry(0.042, 0.05, 1, 16), t)),
-			H = new Group();
-		e.add(H);
-		const Se = new Mesh(new SphereGeometry(0.108, 28, 22), t);
-		(Se.scale.set(0.9, 1.2, 0.98), (Se.castShadow = !0), H.add(Se));
-		const ze = new Mesh(new SphereGeometry(0.082, 22, 16), t);
-		(ze.scale.set(0.86, 0.8, 0.88), ze.position.set(0, -0.055, -0.012), H.add(ze));
-		const Le = new Mesh(new SphereGeometry(0.116, 28, 20, 0, 2 * Math.PI, 0, 0.5 * Math.PI), o);
-		(Le.scale.set(0.99, 1.18, 1.02),
-			Le.position.set(0, 0.034, 0.028),
-			(Le.rotation.x = -0.1),
-			(Le.castShadow = !0),
-			H.add(Le));
-		{
-			let j = 7;
-			const K = () => ((j = (16807 * j) % 2147483647), j / 2147483647),
-				ge = [
-					o,
-					new MeshStandardMaterial({
-						color: 5913122,
-						roughness: 0.95,
-					}),
-					new MeshStandardMaterial({
-						color: 9069120,
-						roughness: 0.95,
-					}),
-				];
-			for (let $ = 0; $ < 95; $++) {
-				const Me = K() * Math.PI * 2,
-					ye = 1.25 * K(),
-					Ue = 0.113 + 0.014 * (K() - 0.5),
-					Te = new Mesh(new SphereGeometry(0.019 + 0.013 * K(), 10, 8), ge[(3 * K()) | 0]);
-				(Te.position.set(
-					Math.sin(ye) * Math.cos(Me) * Ue * 0.97,
-					Math.cos(ye) * Ue * 1.02 + 0.02,
-					Math.sin(ye) * Math.sin(Me) * Ue + 0.012,
-				),
-					Te.position.z < -0.055 &&
-						Te.position.y < 0.085 &&
-						(Te.position.y = 0.085 + ($ % 7) * 0.003),
-					Te.scale.set(1, 0.85, 1),
-					(Te.castShadow = !0),
-					H.add(Te));
-			}
-			for (let $ = 0; $ < 11; $++) {
-				const Me = 0.15 * ($ / 10 - 0.5),
-					ye = new Mesh(new SphereGeometry(0.016 + 0.005 * K(), 10, 8), ge[$ % 3]);
-				(ye.position.set(
-					Me,
-					0.104 + 0.008 * Math.sin(1.7 * $) - 0.1 * Math.abs(Me),
-					-0.08 - 0.15 * Math.abs(Me) + 0.006 * K(),
-				),
-					H.add(ye));
-			}
-			for (const $ of [-1, 1])
-				for (let Me = 0; Me < 3; Me++) {
-					const ye = new Mesh(new SphereGeometry(0.018, 10, 8), ge[Me]);
-					(ye.position.set(0.1 * $, 0.045 - 0.026 * Me, 0.008 + 0.006 * Me), H.add(ye));
-				}
-		}
-		const ct = new Mesh(new SphereGeometry(0.021, 12, 10), n);
-		(ct.scale.set(0.75, 1.4, 0.95), ct.position.set(0, -0.012, -0.104), H.add(ct));
-		const Ve = {};
-		for (const j of [-1, 1]) {
-			const K = j < 0 ? "L" : "R",
-				ge = new Mesh(new SphereGeometry(0.0175, 14, 10), u);
-			(ge.scale.set(1.15, 0.85, 0.6), ge.position.set(0.038 * j, 0.022, -0.096), H.add(ge));
-			{
-				const Te = new Mesh(
-					new SphereGeometry(0.0188, 16, 8, 0, 2 * Math.PI, 0, 0.21 * Math.PI),
-					t,
-				);
-				(Te.scale.copy(ge.scale), Te.position.copy(ge.position), H.add(Te));
-			}
-			const $ = new Mesh(new SphereGeometry(0.0108, 14, 10), c);
-			($.position.set(0.038 * j, 0.022, -0.1), ($.userData.b = $.position.clone()), H.add($));
-			{
-				const Te = new Mesh(new SphereGeometry(0.0055, 10, 8), d);
-				((Te.position.z = -0.0058), $.add(Te));
-			}
-			Ve["eye" + K] = $;
-			const Me = new Mesh(new BoxGeometry(0.044, 0.032, 0.003), t);
-			(Me.position.set(0.038 * j, 0.022, -0.1105),
-				(Me.visible = !1),
-				H.add(Me),
-				(Ve["lid" + K] = Me));
-			const ye = new Mesh(new BoxGeometry(0.046, 0.0092, 0.008), h);
-			(ye.position.set(0.039 * j, 0.049, -0.1),
-				(ye.rotation.z = 0.05 * -j),
-				(ye.userData.rz = 0.05 * -j),
-				(ye.userData.s = j),
-				H.add(ye),
-				(Ve["brow" + K] = ye));
-			const Ue = new Mesh(new SphereGeometry(0.02, 10, 8), t);
-			(Ue.scale.set(0.45, 1, 0.7), Ue.position.set(0.102 * j, -0.005, 0), H.add(Ue));
-		}
-		const et = new Group();
-		(et.position.set(0, -0.062, -0.099), H.add(et), (Ve.mouth = et), (Ve.jaw = ze));
-		const ln = new Mesh(
-			new SphereGeometry(1, 14, 10),
-			new MeshStandardMaterial({
-				color: 3807772,
-				roughness: 0.8,
-			}),
-		);
-		((ln.visible = !1), (ln.position.z = 0.002), et.add(ln), (Ve.inner = ln));
-		const Dn = new MeshStandardMaterial({
-				color: 15986404,
-				roughness: 0.5,
-			}),
-			Cn = new MeshStandardMaterial({
-				color: 12871276,
-				roughness: 0.7,
-			});
-		{
-			const j = new Mesh(new BoxGeometry(0.03, 0.0045, 0.004), Dn);
-			((j.position.z = -5e-4), (j.visible = !1), et.add(j), (Ve.teethU = j));
-			const K = new Mesh(new BoxGeometry(0.03, 0.0035, 0.004), Dn);
-			((K.position.z = -5e-4), (K.visible = !1), et.add(K), (Ve.teethL = K));
-			const ge = new Mesh(new SphereGeometry(1, 10, 8), Cn);
-			((ge.position.z = 0.0012), (ge.visible = !1), et.add(ge), (Ve.tongue = ge));
-		}
-		const mt = (j) => {
-				const K = new Group();
-				return (
-					K.add(new Mesh(new BoxGeometry(0.017, j, 0.008), f)),
-					(K.userData.sides = [-1, 1].map((ge) => {
-						const $ = new Mesh(new BoxGeometry(0.0125, j, 0.008), f);
-						return (($.position.x = 0.0145 * ge), K.add($), $);
-					})),
-					K
-				);
-			},
-			Rt = mt(0.0062);
-		(et.add(Rt), (Ve.upLip = Rt));
-		const N = mt(0.0075);
-		((N.position.y = -0.0062), et.add(N), (Ve.loLip = N));
-		for (const j of ["L", "R"]) {
-			const K = new Mesh(new SphereGeometry(0.0065, 8, 6), f);
-			(et.add(K), (Ve["corner" + j] = K));
-		}
-		const re = () => {
-				const j = w(new Mesh(new SphereGeometry(0.045, 16, 12), t));
-				return (j.scale.set(0.9, 0.5, 1.35), j);
-			},
-			Ce = () => {
-				const j = new Group();
-				e.add(j);
-				const K = new Mesh(new BoxGeometry(0.088, 0.016, 0.23), s);
-				(K.position.set(0, 0, -0.02), (K.castShadow = !0), j.add(K));
-				const ge = new Mesh(new SphereGeometry(0.04, 14, 10), b);
-				(ge.scale.set(1.05, 0.45, 1.15), ge.position.set(0, 0.008, -0.115), j.add(ge));
-				const $ = new Mesh(new TorusGeometry(0.042, 0.011, 8, 16, Math.PI), s);
-				($.position.set(0, 0.008, -0.075), j.add($));
-				const Me = new Mesh(new BoxGeometry(0.09, 0.004, 0.028), i);
-				(Me.position.set(0, 0.009, -0.075), j.add(Me));
-				const ye = new Mesh(new BoxGeometry(0.07, 0.028, 0.13), b);
-				return (ye.position.set(0, 0.017, -0.04), j.add(ye), j);
-			},
-			Ae = (j) => {
-				const K = new Group();
-				e.add(K);
-				const ge = [],
-					$ = (Mt, ht, At = 0, Tn = 0, cn = 0) => {
-						const nt = new Mesh(new SphereGeometry(Mt, 14, 10), t);
-						return (nt.position.set(At, Tn, cn), (nt.castShadow = !0), ht.add(nt), nt);
-					},
-					Me = (Mt, ht, At, Tn) => {
-						const cn = new CylinderGeometry(At, ht, Mt, 14);
-						(cn.rotateX(-Math.PI / 2), cn.translate(0, 0, -Mt / 2));
-						const nt = new Mesh(cn, t);
-						return ((nt.scale.y = 0.88), (nt.castShadow = !0), Tn.add(nt), nt);
-					},
-					ye = new THREE.CapsuleGeometry(0.011, 0.052, 4, 12);
-				ye.rotateZ(Math.PI / 2);
-				const Ue = new Mesh(ye, t);
-				(Ue.position.set(0, 0.002, -0.046),
-					(Ue.scale.y = 0.85),
-					(Ue.castShadow = !0),
-					K.add(Ue),
-					$(0.021, K, 0.03 * -j, -0.003, -0.004).scale.set(1, 0.68, 1.35),
-					$(0.03, K, 0, -0.002, 0.03).scale.set(1, 0.55, 0.9));
-				const Te = [
-					[0.027 * -j, -0.047, 0.03, 0.021, 0.017, 0.0103],
-					[0.009 * -j, -0.051, 0.034, 0.024, 0.018, 0.0109],
-					[0.009 * j, -0.049, 0.032, 0.022, 0.017, 0.0105],
-					[0.027 * j, -0.044, 0.025, 0.017, 0.015, 0.0093],
-				];
-				for (const [Mt, ht, At, Tn, cn, nt] of Te) {
-					const bo = new Group();
-					(bo.position.set(Mt, 0, ht), K.add(bo), $(1.04 * nt, bo), Me(At, nt, 0.88 * nt, bo));
-					const Mo = new Group();
-					((Mo.position.z = -At), bo.add(Mo), $(0.9 * nt, Mo), Me(Tn, 0.88 * nt, 0.8 * nt, Mo));
-					const Zn = new Group();
-					((Zn.position.z = -Tn),
-						Mo.add(Zn),
-						$(0.8 * nt, Zn),
-						Me(cn, 0.8 * nt, 0.72 * nt, Zn),
-						$(0.73 * nt, Zn, 0, 0, -cn),
-						ge.push({
-							p1: bo,
-							p2: Mo,
-							p3: Zn,
-							x: Mt,
-						}));
-				}
-				const tt = new Group();
-				(tt.position.set(0.032 * -j, -0.004, -0.016),
-					(tt.rotation.y = 0.55 * j),
-					K.add(tt),
-					$(0.0135, tt),
-					Me(0.028, 0.0128, 0.0108, tt));
-				const dt = new Group();
-				return (
-					(dt.position.z = -0.028),
-					tt.add(dt),
-					$(0.0105, dt),
-					Me(0.024, 0.0108, 0.0088, dt),
-					$(0.0088, dt, 0, 0, -0.024),
-					ge.push({
-						p1: tt,
-						p2: dt,
-						th: 1,
-						baseY: 0.55 * j,
-					}),
-					(K.userData.fs = ge),
-					(K.userData.c = [0, 0, 0, 0, 0]),
-					(K.userData.sg = j),
-					K
-				);
-			},
-			je = {
-				torso: A,
-				pelvis: P,
-				neck: I,
-				head: H,
-				upper: L,
-				body: x(0.001, 0.001, a),
-				clav: x(0.001, 0.001, a),
-				clavL: x(0.056, 0.05, a),
-				clavR: x(0.056, 0.05, a),
-				upL: x(0.042, 0.062, a),
-				foreL: x(0.032, 0.042, a),
-				upR: x(0.042, 0.062, a),
-				foreR: x(0.032, 0.042, a),
-				thighL: x(0.045, 0.068, r),
-				shinL: x(0.029, 0.045, r),
-				thighR: x(0.045, 0.068, r),
-				shinR: x(0.029, 0.045, r),
-				legL: x(0.001, 0.001, r),
-				legR: x(0.001, 0.001, r),
-				jShL: M(0.07, a),
-				jShR: M(0.07, a),
-				jElL: M(0.043, a),
-				jElR: M(0.043, a),
-				jKnL: M(0.0475, r),
-				jKnR: M(0.0475, r),
-				jHaL: re(),
-				jHaR: re(),
-				jNk: M(0.05, t),
-				jWrL: M(0.031, t),
-				jWrR: M(0.031, t),
-				footL: Ce(),
-				footR: Ce(),
-				fingL: Ae(-1),
-				fingR: Ae(1),
-				face: Ve,
-			};
-		{
-			// Fuse the shoulder caps into the hoodie torso so they form ONE mesh/one piece.
-			// Shoulder anchors (see animation code) sit at x = +/-0.18, y = 1.42 in torso space;
-			// the torso mesh is scaled 1.12 on X, so compensate to keep the caps round.
-			const TORSO_SX = 1.12,
-				parts = [je.torso.geometry],
-				yoke = new SphereGeometry(1, 32, 16);
-			// one smooth shoulder line spanning both arm joints (arm anchors are at x = +/-0.18, y = 1.42)
-			(yoke.scale(0.245 / TORSO_SX, 0.066, 0.088), yoke.translate(0, 1.415, 0), parts.push(yoke));
-			const pos = [],
-				nor = [],
-				uv = [],
-				idx = [];
-			let base = 0;
-			for (const g of parts) {
-				const p = g.attributes.position,
-					n = g.attributes.normal,
-					t = g.attributes.uv;
-				for (let i = 0; i < p.count; i++)
-					(pos.push(p.getX(i), p.getY(i), p.getZ(i)),
-						nor.push(n.getX(i), n.getY(i), n.getZ(i)),
-						uv.push(t ? t.getX(i) : 0, t ? t.getY(i) : 0));
-				if (g.index) for (let i = 0; i < g.index.count; i++) idx.push(g.index.getX(i) + base);
-				else for (let i = 0; i < p.count; i++) idx.push(i + base);
-				base += p.count;
-			}
-			const fused = new BufferGeometry();
-			(fused.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)),
-				fused.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3)),
-				fused.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)),
-				fused.setIndex(idx),
-				(je.torso.geometry = fused));
-			// collar-bone tubes are redundant; shoulder balls shrink to match the arm's girth
-			(je.clavL.visible = je.clavR.visible = !1, je.jShL.scale.setScalar(0.88), je.jShR.scale.setScalar(0.88));
-		}
-		return (
-			(je.body.visible = !1),
-			(je.clav.visible = !1),
-			(je.legL.visible = !1),
-			(je.legR.visible = !1),
-			(e.userData.parts = je),
-			e
-		);
+	// ==== FACE:BEGIN ====
+	/* Stick-man facial expressions: the face follows the emotion of each emoji you send. */
+	const FACE_R = 0.1,
+		faceSurfZ = (x, y, off) => -(Math.sqrt(Math.max(1e-4, FACE_R * FACE_R - x * x - y * y)) + off),
+		FACE_HEAD_BASE = 0xf4f4f0,
+		FACE_NEUTRAL = {
+			mw: 0.025, mc: 0, mo: 0, ma: 0, up: 0.3, tongue: 0, mouthOn: 1,
+			bo: 0, bRL: 0, bRR: 0, bTL: 0, bTR: 0,
+			es: 1, ey: 1, eyD: 0, lx: 0, ly: 0,
+			tears: 0, blush: 0, sweat: 0, halo: 0, shades: 0, mask: 0,
+			eL: "dot", eR: "dot", specs: 0, tint: 0xffffff, tintA: 0,
+		},
+		FACE_NUM = [
+			"mw", "mc", "mo", "ma", "up", "tongue", "mouthOn", "bo", "bRL", "bRR", "bTL", "bTR",
+			"es", "ey", "eyD", "lx", "ly", "tears", "blush", "sweat", "halo", "shades", "mask",
+		],
+		faceCompile = (o) => {
+			const p = Object.assign({}, FACE_NEUTRAL, o);
+			p.hc = new Color(FACE_HEAD_BASE).lerp(new Color(p.tint), p.tintA);
+			return p;
+		},
+		FACE_NEUTRAL_C = faceCompile({}),
+		/* mw = mouth half-width, mc = mouth-corner curve (+ smile / - frown), mo = mouth opening,
+		   ma = mouth skew, up = share of the opening above the lip line, bo = brows on,
+		   bR* = brow raise, bT* = brow tilt (+ angry / - sad), es = eye size, ey = eye openness,
+		   eyD = left/right eye size difference, lx/ly = where the pupils look */
+		FACE_DEFS = {
+			grin: { mw: 0.034, mc: 0.02, mo: 0.024, bo: 1, bRL: 0.35, bRR: 0.35 },
+			beam: { mw: 0.038, mc: 0.018, mo: 0.02, eL: "arc", eR: "arc", bo: 1, bRL: 0.3, bRR: 0.3 },
+			laugh: { mw: 0.038, mc: 0.016, mo: 0.034, eL: "arc", eR: "arc", bo: 1, bRL: 0.4, bRR: 0.4 },
+			sweatSmile: { mw: 0.034, mc: 0.018, mo: 0.02, bo: 1, bRL: 0.1, bRR: 0.1, bTL: -0.5, bTR: -0.5, sweat: 1 },
+			joy: { mw: 0.038, mc: 0.016, mo: 0.036, eL: "arc", eR: "arc", tears: 1, bo: 1, bRL: 0.3, bRR: 0.3 },
+			smile: { mw: 0.03, mc: 0.018, eL: "arc", eR: "arc", blush: 0.7 },
+			slight: { mw: 0.026, mc: 0.012 },
+			playful: { mw: 0.026, mc: 0.012, ma: 0.004, bo: 1, bRL: 0.6, bRR: -0.1 },
+			wink: { mw: 0.03, mc: 0.018, eR: "arc", bo: 1, bRL: 0, bRR: 0.2 },
+			relieved: { mw: 0.028, mc: 0.014, eL: "flat", eR: "flat", blush: 0.3 },
+			inlove: { mw: 0.03, mc: 0.02, mo: 0.012, eL: "heart", eR: "heart", blush: 0.8 },
+			adore: { mw: 0.03, mc: 0.02, eL: "arc", eR: "arc", blush: 1 },
+			kiss: { mw: 0.009, mo: 0.011, up: 0.5, blush: 0.5 },
+			kissWink: { mw: 0.009, mo: 0.011, up: 0.5, eR: "arc", blush: 0.6 },
+			kissSmile: { mw: 0.009, mo: 0.011, up: 0.5, eL: "arc", eR: "arc", blush: 0.6 },
+			kissClosed: { mw: 0.009, mo: 0.011, up: 0.5, eL: "flat", eR: "flat", blush: 0.6 },
+			yum: { mw: 0.032, mc: 0.02, mo: 0.016, tongue: 0.6 },
+			tongue: { mw: 0.032, mc: 0.02, mo: 0.014, tongue: 1, bo: 1, bRL: 0.3, bRR: 0.3 },
+			tongueWink: { mw: 0.032, mc: 0.02, mo: 0.014, tongue: 1, eR: "arc", bo: 1, bRL: 0.3, bRR: 0.3 },
+			tongueSq: { mw: 0.032, mc: 0.02, mo: 0.014, tongue: 1, eL: "flat", eR: "flat" },
+			zany: { mw: 0.034, mc: 0.02, mo: 0.016, tongue: 1, eyD: 0.45, bo: 1, bRL: 0.6, bRR: 0.1 },
+			cool: { mw: 0.03, mc: 0.016, shades: 1 },
+			starStruck: { mw: 0.036, mc: 0.02, mo: 0.026, eL: "star", eR: "star", bo: 1, bRL: 0.5, bRR: 0.5 },
+			party: { mw: 0.036, mc: 0.02, mo: 0.024, eL: "arc", eR: "arc", bo: 1, bRL: 0.5, bRR: 0.5 },
+			smirk: { mw: 0.024, mc: 0.01, ma: 0.01, bo: 1, bRL: 0.5, bRR: 0, bTR: 0.3 },
+			unamused: { mw: 0.026, mc: -0.004, ey: 0.5, lx: 0.8, bo: 1, bTL: 0.25, bTR: 0.25, bRL: -0.1, bRR: -0.1 },
+			flat: {},
+			expressionless: { eL: "flat", eR: "flat" },
+			noMouth: { mouthOn: 0 },
+			think: { mw: 0.014, ma: 0.008, bo: 1, bRL: 0.7, bRR: -0.1, lx: 0.5, ly: 0.6 },
+			raisedBrow: { mw: 0.024, mc: -0.002, bo: 1, bRL: -0.2, bRR: 0.8, bTR: 0.2 },
+			nerd: { mw: 0.03, mc: 0.014, mo: 0.01, specs: 1 },
+			monocle: { mw: 0.02, mc: 0.004, bo: 1, bRL: 0.1, bRR: 0.8, specs: 2 },
+			disguise: { mw: 0.026, mc: 0.006, bo: 1, bRL: 0.4, bRR: 0.4, specs: 1 },
+			pensive: { mw: 0.022, mc: -0.012, ey: 0.55, ly: -0.6, bo: 1, bTL: -0.6, bTR: -0.6, bRL: 0.1, bRR: 0.1 },
+			disappointed: { mw: 0.026, mc: -0.016, ly: -0.4, bo: 1, bTL: -0.8, bTR: -0.8, bRL: 0.2, bRR: 0.2 },
+			worried: { mw: 0.024, mc: -0.012, bo: 1, bTL: -1, bTR: -1, bRL: 0.6, bRR: 0.6 },
+			frown: { mw: 0.026, mc: -0.016, bo: 1, bTL: -0.4, bTR: -0.4 },
+			confused: { mw: 0.022, mc: -0.006, ma: 0.01, bo: 1, bRL: 0.5, bRR: -0.2, bTL: -0.3, bTR: 0.3 },
+			persevere: { mw: 0.03, mc: -0.014, mo: 0.012, eL: "flat", eR: "flat", bo: 1, bTL: -0.6, bTR: -0.6, bRL: -0.1, bRR: -0.1 },
+			persevereX: { mw: 0.03, mc: -0.014, mo: 0.012, eL: "x", eR: "x", bo: 1, bTL: -0.6, bTR: -0.6 },
+			weary: { mw: 0.034, mc: -0.02, mo: 0.034, eL: "flat", eR: "flat", bo: 1, bTL: -0.8, bTR: -0.8, bRL: 0.3, bRR: 0.3 },
+			pleading: { mw: 0.016, mc: -0.01, es: 1.7, bo: 1, bTL: -1, bTR: -1, bRL: 0.7, bRR: 0.7, tears: 0.35 },
+			cry: { mw: 0.026, mc: -0.016, bo: 1, bTL: -0.8, bTR: -0.8, bRL: 0.2, bRR: 0.2, tears: 1 },
+			sob: { mw: 0.034, mc: -0.018, mo: 0.032, eL: "flat", eR: "flat", bo: 1, bTL: -1, bTR: -1, bRL: 0.3, bRR: 0.3, tears: 2 },
+			sadSweat: { mw: 0.026, mc: -0.014, bo: 1, bTL: -0.8, bTR: -0.8, sweat: 1 },
+			anxious: { mw: 0.028, mc: -0.01, mo: 0.026, es: 1.15, bo: 1, bTL: -1, bTR: -1, bRL: 0.6, bRR: 0.6, sweat: 1 },
+			angry: { mw: 0.026, mc: -0.014, bo: 1, bTL: 1, bTR: 1, bRL: -0.3, bRR: -0.3, tint: 0xff7a6e, tintA: 0.35 },
+			rage: { mw: 0.03, mc: -0.012, mo: 0.014, es: 0.8, bo: 1, bTL: 1, bTR: 1, bRL: -0.4, bRR: -0.4, tint: 0xff5a4a, tintA: 0.85 },
+			cursing: { mw: 0.034, mc: -0.012, mo: 0.022, es: 0.8, bo: 1, bTL: 1, bTR: 1, bRL: -0.5, bRR: -0.5, tint: 0xff4a3a, tintA: 1 },
+			triumph: { mw: 0.022, mc: -0.004, mo: 0.01, bo: 1, bTL: 0.8, bTR: 0.8, bRL: -0.2, bRR: -0.2, tint: 0xff8a7a, tintA: 0.3 },
+			fear: { mw: 0.022, mc: -0.008, mo: 0.024, es: 1.6, bo: 1, bRL: 0.8, bRR: 0.8, bTL: -0.7, bTR: -0.7, tint: 0xc9dcff, tintA: 0.5 },
+			scream: { mw: 0.018, mo: 0.044, up: 0.45, es: 1.8, bo: 1, bRL: 1, bRR: 1, tint: 0xc9dcff, tintA: 0.6 },
+			surprised: { mw: 0.013, mo: 0.028, up: 0.45, es: 1.5, bo: 1, bRL: 1, bRR: 1 },
+			flushed: { mw: 0.012, es: 1.4, bo: 1, bRL: 0.6, bRR: 0.6, blush: 1, tint: 0xffb3c1, tintA: 0.5 },
+			sleepy: { mw: 0.012, mo: 0.012, up: 0.4, eL: "flat", eR: "flat" },
+			yawn: { mw: 0.018, mo: 0.042, up: 0.45, eL: "flat", eR: "flat", bo: 1, bRL: 0.4, bRR: 0.4 },
+			sick: { mw: 0.024, mc: -0.01, ma: 0.008, ey: 0.5, bo: 1, bTL: -0.8, bTR: -0.8, tint: 0x9ad46a, tintA: 0.8 },
+			vomit: { mw: 0.03, mc: -0.012, mo: 0.036, eL: "flat", eR: "flat", bo: 1, bTL: -0.8, bTR: -0.8, tint: 0x9ad46a, tintA: 1 },
+			mask: { mouthOn: 0, mask: 1, ey: 0.7, bo: 1, bTL: -0.4, bTR: -0.4 },
+			fever: { mw: 0.024, mc: -0.008, ey: 0.6, bo: 1, bTL: -0.7, bTR: -0.7, tint: 0xff8a7a, tintA: 0.5 },
+			hot: { mw: 0.032, mc: -0.004, mo: 0.03, tongue: 0.7, sweat: 1, es: 0.85, tint: 0xff5a4a, tintA: 1 },
+			cold: { mw: 0.026, mc: -0.006, mo: 0.012, es: 0.9, bo: 1, bTL: -0.6, bTR: -0.6, bRL: 0.2, bRR: 0.2, tint: 0x8fc4ff, tintA: 1 },
+			dizzy: { mw: 0.02, mc: -0.008, mo: 0.014, eL: "x", eR: "x" },
+			woozy: { mw: 0.026, mc: -0.008, ma: 0.012, eyD: 0.4, tint: 0xcfe8a0, tintA: 0.5 },
+			mindBlown: { mw: 0.02, mo: 0.042, up: 0.45, es: 1.8, bo: 1, bRL: 1, bRR: 1, tint: 0xff9a8a, tintA: 0.4 },
+			hug: { mw: 0.034, mc: 0.02, mo: 0.018, eL: "arc", eR: "arc", blush: 0.6, bo: 1, bRL: 0.3, bRR: 0.3 },
+			shush: { mw: 0.01, bo: 1, bRL: 0.4, bRR: 0.4 },
+			zip: { mw: 0.036, ey: 0.9 },
+			giggle: { mouthOn: 0, eL: "arc", eR: "arc", blush: 0.5 },
+			peek: { mouthOn: 0, es: 1.5, bo: 1, bRL: 0.7, bRR: 0.7 },
+			eyeRoll: { mw: 0.024, ly: 1.2, bo: 1, bRL: 0.5, bRR: 0.5 },
+			grimace: { mw: 0.036, mo: 0.016, up: 0.5, bo: 1, bTL: -0.4, bTR: -0.4, bRL: 0.2, bRR: 0.2 },
+			devil: { mw: 0.034, mc: 0.022, mo: 0.01, bo: 1, bTL: 1, bTR: 1, bRL: -0.1, bRR: -0.1, tint: 0xc79bff, tintA: 0.55 },
+			angel: { mw: 0.028, mc: 0.015, eL: "arc", eR: "arc", halo: 1, blush: 0.3 },
+			melt: { mw: 0.026, mc: 0.01, ey: 0.6, ly: -0.4, sweat: 0.7 },
+			peekEyes: { es: 1.3, lx: 1, bo: 1, bRL: 0.3, bRR: 0.3 },
+			smileTear: { mw: 0.03, mc: 0.016, tears: 0.5, bo: 1, bTL: -0.4, bTR: -0.4 },
+			holdTears: { mw: 0.022, mc: 0.004, es: 1.5, bo: 1, bTL: -1, bTR: -1, bRL: 0.5, bRR: 0.5, tears: 0.5 },
+			exhale: { mw: 0.011, mo: 0.014, up: 0.5, eL: "flat", eR: "flat" },
+			stern: { mw: 0.026, mc: -0.002, bo: 1, bTL: 0.6, bTR: 0.6, bRL: -0.2, bRR: -0.2 },
+			pray: { mw: 0.026, mc: 0.012, eL: "flat", eR: "flat", bo: 1, bTL: -0.3, bTR: -0.3, bRL: 0.2, bRR: 0.2 },
+		},
+		FACE_PRESETS = Object.fromEntries(Object.entries(FACE_DEFS).map(([k, v]) => [k, faceCompile(v)])),
+		FACE_MAP_SRC = `
+grin: 😀 😃 😄 🤠 🤑 😺 😸 🙋 🙌 👏 🎉 🎊 🏆 🥇 🥈 🥉 🏅 💯 🎂 🎁 🎈 💪 🙆 ✅ 👍 👌 🤝 ✌ 🤙 🤟 🫰 🔥 🆗 🆒 🆙 🆕
+beam: 😁
+laugh: 😆
+sweatSmile: 😅
+joy: 😂 🤣 😹
+smile: 😊 ☺
+slight: 🙂 🫡 👋 🖖
+playful: 🙃
+wink: 😉
+relieved: 😌
+inlove: 😍 ❤ 🧡 💛 💚 💙 💜 🤍 🖤 🤎 💕 💞 💓 💗 💖 💘 💝 😻 🫶 💑
+adore: 🥰
+kiss: 😗
+kissWink: 😘
+kissSmile: 😙
+kissClosed: 😚
+yum: 😋 🤤
+tongue: 😛
+tongueWink: 😜
+tongueSq: 😝
+zany: 🤪
+cool: 😎 🕶
+starStruck: 🤩 ⭐ 🌟 ✨ 🌠
+party: 🥳
+smirk: 😏 😼
+unamused: 😒 🤥
+flat: 😐
+expressionless: 😑
+noMouth: 😶 🫥
+think: 🤔 ❓ ❔ 🤷
+raisedBrow: 🤨
+nerd: 🤓
+monocle: 🧐
+disguise: 🥸
+pensive: 😔 🙇
+disappointed: 😞 👎 🤦
+worried: 😟 🆘 ⚠
+frown: 🙁 ☹
+confused: 😕 🫤
+persevere: 😣
+persevereX: 😖
+weary: 😫 😩
+pleading: 🥺
+cry: 😢 💔
+sob: 😭
+sadSweat: 😥 😓
+anxious: 😰
+angry: 😠 💢
+rage: 😡
+cursing: 🤬 👿
+triumph: 😤
+fear: 😨
+scream: 😱
+surprised: 😮 😲 😯 😧 😦 ❗ ❕ ‼ ⁉
+flushed: 😳
+sleepy: 😴 😪 💤 🛌
+yawn: 🥱
+sick: 🤢
+vomit: 🤮
+mask: 😷
+fever: 🤒 🤕 🤧
+hot: 🥵
+cold: 🥶
+dizzy: 😵 💀 ☠
+woozy: 🥴
+mindBlown: 🤯
+hug: 🤗
+shush: 🤫
+zip: 🤐
+giggle: 🤭
+peek: 🫢 🫣
+eyeRoll: 🙄
+grimace: 😬
+devil: 😈
+angel: 😇
+melt: 🫠
+peekEyes: 👀
+smileTear: 🥲
+holdTears: 🥹
+exhale: 😮\u200d💨
+stern: ❌ 🚫 ⛔ 🛑 🙅
+pray: 🙏 🤲
+`,
+		FACE_LOOKUP = new Map();
+	for (const line of FACE_MAP_SRC.trim().split("\n")) {
+		const [name, list] = line.split(":");
+		for (const em of list.trim().split(/\s+/)) FACE_LOOKUP.set(em.replace(/\uFE0F/g, ""), name.trim());
 	}
-	const playerAvatar = buildAvatar();
+	/* emoji -> expression preset (null when the symbol carries no clear emotion, e.g. 🍕) */
+	function faceMoodFor(emoji) {
+		const k = String(emoji)
+			.replace(/\uFE0F/g, "")
+			.replace(/[\u{1F3FB}-\u{1F3FF}]/gu, "");
+		let n = FACE_LOOKUP.get(k);
+		!n && k.includes("\u200d") && (n = FACE_LOOKUP.get(k.split("\u200d")[0]));
+		return n ? FACE_PRESETS[n] : null;
+	}
+	/* the sequence of expressions for the message being shown; stepped in time with the emoji reveal */
+	const faceDriver = { seq: [], start: 0, hold: 4500, active: !1 };
+	function faceSetMessage(emojis, holdMs) {
+		let last = null;
+		faceDriver.seq = emojis.map((em) => (last = faceMoodFor(em) || last));
+		faceDriver.start = performance.now();
+		faceDriver.hold = holdMs || 4500;
+		faceDriver.active = faceDriver.seq.some(Boolean);
+	}
+	function faceCurrentMood() {
+		if (!faceDriver.active) return null;
+		const el = performance.now() - faceDriver.start,
+			n = faceDriver.seq.length;
+		if (el > (n - 1) * charRevealMs + faceDriver.hold) return ((faceDriver.active = !1), null);
+		return faceDriver.seq[Math.min(n - 1, Math.floor(el / charRevealMs))];
+	}
+	const faceHeartShape = (() => {
+			const s = new THREE.Shape();
+			s.moveTo(0, -0.7);
+			s.bezierCurveTo(-1.1, 0.1, -0.6, 0.9, 0, 0.35);
+			s.bezierCurveTo(0.6, 0.9, 1.1, 0.1, 0, -0.7);
+			return s;
+		})(),
+		faceStarShape = (() => {
+			const s = new THREE.Shape();
+			for (let i = 0; i < 10; i++) {
+				const a = Math.PI / 2 + (i * Math.PI) / 5,
+					r = i % 2 ? 0.45 : 1;
+				i ? s.lineTo(Math.cos(a) * r, Math.sin(a) * r) : s.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+			}
+			s.closePath();
+			return s;
+		})();
+	function buildFaceRig(head, faceMat, headMat) {
+		const dbl = (c, o) =>
+				new MeshBasicMaterial({ color: c, side: DoubleSide, transparent: o != null, opacity: o == null ? 1 : o }),
+			rig = { eyes: [], brows: [], blush: [], tears: [], headMat, w: 0, hc: new Color(FACE_HEAD_BASE), cur: {} };
+		for (const k of FACE_NUM) rig.cur[k] = FACE_NEUTRAL[k];
+		// eyes: dot (normal), arc (happy), flat (closed), x (dizzy), heart, star
+		for (const side of [-1, 1]) {
+			const g = new Group(),
+				x = 0.036 * side;
+			g.position.set(x, 0.026, -0.093);
+			g.rotation.y = -Math.asin(x / FACE_R);
+			const dot = new Mesh(new SphereGeometry(0.011, 10, 8), faceMat),
+				arc = new Mesh(new TorusGeometry(0.0125, 0.0036, 6, 14, Math.PI), faceMat),
+				flat = new Mesh(new BoxGeometry(0.028, 0.0045, 0.005), faceMat),
+				xm = new Group(),
+				heart = new Mesh(new THREE.ShapeGeometry(faceHeartShape), dbl(0xe0245e)),
+				star = new Mesh(new THREE.ShapeGeometry(faceStarShape), dbl(0xffc21a));
+			arc.position.y = -0.004;
+			for (const a of [Math.PI / 4, -Math.PI / 4]) {
+				const b = new Mesh(new BoxGeometry(0.028, 0.0045, 0.005), faceMat);
+				((b.rotation.z = a), xm.add(b));
+			}
+			heart.scale.setScalar(0.0145);
+			star.scale.setScalar(0.017);
+			for (const m of [dot, arc, flat, xm, heart, star]) ((m.visible = !1), g.add(m));
+			dot.visible = !0;
+			head.add(g);
+			rig.eyes.push({ g, dot, arc, flat, x: xm, heart, star, kind: "dot", pop: 0 });
+		}
+		// brows
+		const browMat = new MeshBasicMaterial({ color: 0x111111 });
+		for (const side of [-1, 1]) {
+			const m = new Mesh(new BoxGeometry(0.036, 0.0065, 0.006), browMat);
+			((m.visible = !1), head.add(m), rig.brows.push({ m, side }));
+		}
+		// mouth: three ribbons (upper lip, lower lip, inside) rebuilt every frame from a few numbers
+		const N = 16,
+			strip = (mat) => {
+				const geo = new BufferGeometry(),
+					idx = [];
+				geo.setAttribute("position", new BufferAttribute(new Float32Array((N + 1) * 6), 3));
+				for (let i = 0; i < N; i++) idx.push(2 * i, 2 * i + 1, 2 * i + 2, 2 * i + 1, 2 * i + 3, 2 * i + 2);
+				geo.setIndex(idx);
+				const m = new Mesh(geo, mat);
+				return ((m.frustumCulled = !1), head.add(m), m);
+			},
+			fillMat = dbl(0x4a1018, 1);
+		rig.mouth = { up: strip(dbl(0x111111)), lo: strip(dbl(0x111111)), fill: strip(fillMat), fillMat, N };
+		rig.tongue = new Mesh(new SphereGeometry(0.013, 10, 8), dbl(0xf0707f));
+		((rig.tongue.visible = !1), head.add(rig.tongue));
+		// blush, tears, sweat
+		for (const side of [-1, 1]) {
+			const x = 0.062 * side,
+				m = new Mesh(new CircleGeometry(0.015, 16), dbl(0xff6b88, 0.55));
+			(m.position.set(x, -0.012, faceSurfZ(x, -0.012, 0.003)),
+				(m.rotation.y = -Math.asin(x / FACE_R)),
+				(m.visible = !1),
+				head.add(m),
+				rig.blush.push({ m }));
+		}
+		for (let k = 0; k < 4; k++) {
+			const m = new Mesh(new SphereGeometry(0.0065, 8, 6), dbl(0x4fb0ff, 1));
+			(m.scale.set(1, 1.5, 0.6), (m.visible = !1), head.add(m), rig.tears.push({ m, side: k % 2 ? 1 : -1, row: k >> 1, k }));
+		}
+		rig.sweat = new Mesh(new SphereGeometry(0.008, 8, 6), dbl(0x9fdcff, 1));
+		(rig.sweat.scale.set(1, 1.5, 0.6), (rig.sweat.visible = !1), head.add(rig.sweat));
+		// extras: halo, sunglasses, glasses / monocle, face mask
+		rig.halo = new Mesh(new TorusGeometry(0.055, 0.0055, 8, 28), new MeshBasicMaterial({ color: 0xffd24a }));
+		((rig.halo.rotation.x = Math.PI / 2), (rig.halo.visible = !1), head.add(rig.halo));
+		const black = new MeshBasicMaterial({ color: 0x0b0b0b });
+		rig.shades = new Group();
+		for (const side of [-1, 1]) {
+			const x = 0.036 * side,
+				lens = new Mesh(new BoxGeometry(0.048, 0.03, 0.006), black),
+				glint = new Mesh(new BoxGeometry(0.014, 0.0035, 0.002), dbl(0xffffff, 0.35));
+			(lens.position.set(x, 0.026, -0.097),
+				(lens.rotation.y = -Math.asin(x / FACE_R)),
+				glint.position.set(x - 0.008 * side, 0.034, -0.1),
+				(glint.rotation.y = lens.rotation.y),
+				rig.shades.add(lens, glint));
+		}
+		const bridge = new Mesh(new BoxGeometry(0.024, 0.005, 0.006), black);
+		(bridge.position.set(0, 0.034, -0.099), rig.shades.add(bridge), (rig.shades.visible = !1), head.add(rig.shades));
+		rig.specs = new Group();
+		rig.specRings = [];
+		for (const side of [-1, 1]) {
+			const x = 0.036 * side,
+				ring = new Mesh(new TorusGeometry(0.0185, 0.0028, 6, 20), black);
+			(ring.position.set(x, 0.026, -0.097), (ring.rotation.y = -Math.asin(x / FACE_R)), rig.specs.add(ring), rig.specRings.push(ring));
+		}
+		const sb = new Mesh(new BoxGeometry(0.02, 0.0035, 0.004), black);
+		(sb.position.set(0, 0.03, -0.098), (rig.specBridge = sb), rig.specs.add(sb), (rig.specs.visible = !1), head.add(rig.specs));
+		rig.mask = new Mesh(
+			new SphereGeometry(0.104, 18, 8, (3 * Math.PI) / 2 - 0.55, 1.1, 1.67, 0.75),
+			dbl(0xdbe9f4),
+		);
+		((rig.mask.visible = !1), head.add(rig.mask));
+		return rig;
+	}
+	function updateFaceRig(rig, dt, time, mouthOpen, blink, mood) {
+		const fc = (v) => Math.min(1, Math.max(0, v)),
+			tgt = mood || FACE_NEUTRAL_C,
+			cur = rig.cur,
+			k = 1 - Math.exp(-14 * dt);
+		for (const key of FACE_NUM) cur[key] += (tgt[key] - cur[key]) * k;
+		rig.w += ((mood ? 1 : 0) - rig.w) * k;
+		rig.hc.lerp(tgt.hc, k);
+		rig.headMat.color.copy(rig.hc);
+		// eyes
+		const shades = cur.shades > 0.05,
+			kinds = [tgt.eL, tgt.eR],
+			sc = [cur.es * (1 + cur.eyD), cur.es * (1 - cur.eyD)];
+		rig.eyes.forEach((E, i) => {
+			const kind = kinds[i];
+			E.kind !== kind && ((E.kind = kind), (E.pop = 1));
+			E.pop *= Math.exp(-9 * dt);
+			E.g.scale.setScalar(Math.max(0.05, sc[i]) * (1 + 0.35 * E.pop));
+			for (const n of ["dot", "arc", "flat", "x", "heart", "star"]) E[n].visible = !shades && kind === n;
+			E.dot.scale.set(1 + 0.6 * blink, Math.max(0.06, cur.ey) * (1 - 0.88 * blink), 1);
+			E.dot.position.set(cur.lx * 0.012, cur.ly * 0.01, 0);
+		});
+		// brows
+		for (const B of rig.brows) {
+			const left = B.side < 0,
+				raise = left ? cur.bRL : cur.bRR,
+				tilt = left ? cur.bTL : cur.bTR,
+				x = B.side * 0.037,
+				y = 0.056 + 0.012 * raise;
+			B.m.visible = cur.bo > 0.04;
+			B.m.position.set(x, y, faceSurfZ(x, y, 0.004));
+			B.m.rotation.set(0, -Math.asin(x / FACE_R), (left ? -1 : 1) * tilt * 0.5);
+			B.m.scale.set(fc(cur.bo), fc(cur.bo), 1);
+		}
+		// mouth (neutral face + speech = the classic line that opens into an O)
+		const spk = fc((mouthOpen - 0.14) / 0.2),
+			oR = 0.014 * (0.7 + 1.1 * mouthOpen),
+			mix = spk * (1 - rig.w),
+			on = fc(cur.mouthOn),
+			mw = (cur.mw + (oR - cur.mw) * mix) * on,
+			mo = (cur.mo + (2 * oR - cur.mo) * mix + 0.02 * spk * rig.w * mouthOpen) * on,
+			up = cur.up + (0.5 - cur.up) * mix,
+			mc = cur.mc * (1 - mix),
+			ma = cur.ma * (1 - mix),
+			baseY = -0.04,
+			h = 0.003,
+			M = rig.mouth,
+			pU = M.up.geometry.attributes.position,
+			pL = M.lo.geometry.attributes.position,
+			pF = M.fill.geometry.attributes.position;
+		for (let i = 0; i <= M.N; i++) {
+			const t = (i / M.N) * 2 - 1,
+				x = t * mw,
+				s = Math.sqrt(Math.max(0, 1 - t * t)),
+				yl = baseY + mc * t * t + ma * t,
+				yu = yl + mo * up * s,
+				yd = yl - mo * (1 - up) * s,
+				zU = faceSurfZ(x, yu, 0.004),
+				zD = faceSurfZ(x, yd, 0.004),
+				zF = faceSurfZ(x, (yu + yd) / 2, 0.002);
+			pU.setXYZ(2 * i, x, yu + h, zU);
+			pU.setXYZ(2 * i + 1, x, yu - h, zU);
+			pL.setXYZ(2 * i, x, yd + h, zD);
+			pL.setXYZ(2 * i + 1, x, yd - h, zD);
+			pF.setXYZ(2 * i, x, yu, zF);
+			pF.setXYZ(2 * i + 1, x, yd, zF);
+		}
+		pU.needsUpdate = pL.needsUpdate = pF.needsUpdate = !0;
+		const showMouth = on > 0.08;
+		M.up.visible = M.lo.visible = showMouth;
+		M.fillMat.opacity = fc(1.6 * rig.w);
+		M.fill.visible = showMouth && mo > 0.004 && M.fillMat.opacity > 0.05;
+		// tongue
+		const tg = fc(cur.tongue),
+			drop = mo * (1 - up);
+		rig.tongue.visible = tg > 0.06 && on > 0.5;
+		rig.tongue.position.set(0, baseY - drop - 0.005 * tg, faceSurfZ(0, baseY - drop, 0.0035));
+		rig.tongue.scale.set(1.05, Math.max(0.05, 1.25 * tg), 0.35);
+		// blush
+		const bl = fc(cur.blush);
+		for (const B of rig.blush) {
+			B.m.visible = bl > 0.04;
+			B.m.material.opacity = 0.6 * bl;
+			B.m.scale.setScalar(0.6 + 0.5 * bl);
+		}
+		// tears (falling drops) and a sweat drop
+		for (const T of rig.tears) {
+			const on2 = cur.tears > (T.row ? 1.2 : 0.08),
+				ph = (time * (0.9 + 0.2 * T.row) + 0.31 * T.k) % 1,
+				x = T.side * (0.04 + 0.006 * T.row),
+				y = 0.014 - ph * 0.07;
+			T.m.visible = on2;
+			T.m.position.set(x, y, faceSurfZ(x, y, 0.004));
+			T.m.material.opacity = Math.sin(Math.PI * ph) * fc(cur.tears);
+		}
+		{
+			const ph = (time * 0.5) % 1,
+				x = 0.078,
+				y = 0.056 - ph * 0.05;
+			rig.sweat.visible = cur.sweat > 0.05;
+			rig.sweat.position.set(x, y, faceSurfZ(x, y, 0.004));
+			rig.sweat.material.opacity = Math.sin(Math.PI * ph) * fc(cur.sweat);
+		}
+		// extras
+		rig.halo.visible = cur.halo > 0.05;
+		rig.halo.scale.setScalar(Math.max(0.01, fc(cur.halo)));
+		rig.halo.position.set(0, 0.15 + 0.006 * Math.sin(time * 3), 0);
+		rig.shades.visible = shades;
+		rig.shades.scale.setScalar(Math.max(0.01, fc(cur.shades)));
+		rig.specs.visible = tgt.specs > 0;
+		rig.specRings[0].visible = rig.specBridge.visible = tgt.specs === 1;
+		rig.mask.visible = cur.mask > 0.05;
+		rig.mask.scale.setScalar(Math.max(0.01, fc(cur.mask)));
+	}
+	// ==== FACE:END ====
+	function buildStickMan() {
+		const g = new Group(),
+			lineMat = new MeshStandardMaterial({ color: 1710618, roughness: 0.6 }),
+			headMat = new MeshStandardMaterial({ color: 16053488, roughness: 0.7 }),
+			faceMat = new MeshBasicMaterial({ color: 1118481 }),
+			limb = () => {
+				const m = new Mesh(new CylinderGeometry(0.014, 0.014, 1, 10), lineMat);
+				return ((m.castShadow = !0), g.add(m), m);
+			},
+			ball = (r) => {
+				const m = new Mesh(new SphereGeometry(r, 14, 10), lineMat);
+				return ((m.castShadow = !0), g.add(m), m);
+			},
+			head = new Group();
+		g.add(head);
+		head.add(new Mesh(new SphereGeometry(0.1, 24, 18), headMat));
+		head.add(new Mesh(new TorusGeometry(0.1, 0.008, 8, 40), lineMat));
+		// face: eyes, brows, mouth, tears... all driven by buildFaceRig / updateFaceRig (see FACE block above)
+		const faceRig = buildFaceRig(head, faceMat, headMat),
+			eyes = [faceRig.eyes[0].dot, faceRig.eyes[1].dot];
+		// invisible head stand-in so the head still casts a shadow while hidden in first person
+		const headShadow = new Mesh(
+			new SphereGeometry(0.1, 16, 12),
+			new MeshBasicMaterial({ colorWrite: !1, depthWrite: !1 }),
+		);
+		((headShadow.castShadow = !0), g.add(headShadow));
+		g.userData.parts = {
+			head: head,
+			headShadow: headShadow,
+			face: faceRig,
+			eyeL: eyes[0],
+			eyeR: eyes[1],
+			blink: 0,
+			blinkIn: 2 + Math.random() * 3,
+			blinkT: -1,
+			shoulder: ball(0.016),
+			neck: limb(),
+			torso: limb(),
+			armUpL: limb(),
+			armLoL: limb(),
+			armUpR: limb(),
+			armLoR: limb(),
+			legUpL: limb(),
+			legLoL: limb(),
+			legUpR: limb(),
+			legLoR: limb(),
+			footL: limb(),
+			footR: limb(),
+			handL: ball(0.024),
+			handR: ball(0.024),
+			pelvis: ball(0.02),
+			mouthOpen: 0,
+		};
+		return g;
+	}
+	const playerAvatar = buildStickMan();
 	scene.add(playerAvatar);
 	const playerAvatarParts = playerAvatar.userData.parts,
-		headMeshes = [playerAvatarParts.head],
-		setHeadVisible = (e) =>
-			headMeshes.forEach((t) => {
-				t.visible = e;
-			});
+		setHeadVisible = (e) => {
+			playerAvatarParts.head.visible = e;
+		};
 	setHeadVisible(!1);
-	const occluderMaterial = new MeshBasicMaterial({
-			colorWrite: !1,
-			depthWrite: !1,
-		}),
-		headOccluder = playerAvatarParts.head.clone(!0);
-	headOccluder.traverse((e) => {
-		e.isMesh && ((e.material = occluderMaterial), (e.castShadow = !0), (e.receiveShadow = !1));
-	});
-	const neckOccluder = new Mesh(playerAvatarParts.neck.geometry, occluderMaterial);
-	neckOccluder.castShadow = !0;
-	const neckJointOccluder = new Mesh(playerAvatarParts.jNk.geometry, occluderMaterial);
-	neckJointOccluder.castShadow = !0;
-	const torsoOccluder = new Mesh(playerAvatarParts.torso.geometry, occluderMaterial),
-		pelvisOccluder = new Mesh(playerAvatarParts.pelvis.geometry, occluderMaterial);
-	((torsoOccluder.castShadow = pelvisOccluder.castShadow = !0),
-		(playerAvatarParts.torso.scale.x = torsoOccluder.scale.x = 1.12));
-	const upperBodyOccluder = playerAvatarParts.upper.clone(!0);
-	(upperBodyOccluder.traverse((e) => {
-		e.isMesh && ((e.material = occluderMaterial), (e.castShadow = !0), (e.receiveShadow = !1));
-	}),
-		(headOccluder.visible =
-			neckOccluder.visible =
-			neckJointOccluder.visible =
-			upperBodyOccluder.visible =
-				!0),
-		playerAvatar.add(
-			headOccluder,
-			neckOccluder,
-			neckJointOccluder,
-			torsoOccluder,
-			pelvisOccluder,
-			upperBodyOccluder,
-		));
 	const ballAnchor = new Object3D();
-	(ballAnchor.position.set(0, 1, -0.185), playerAvatarParts.upper.add(ballAnchor));
+	playerAvatar.add(ballAnchor);
 	const leftController = renderer.xr.getController(0),
 		rightController = renderer.xr.getController(1);
 	playerRig.add(leftController, rightController);
@@ -1995,7 +2000,12 @@ await (async function () {
 				s = a("middle-finger-tip");
 			if (!r || !s) return (handPinching[e] = !1);
 			const l = Math.hypot(r.x - s.x, r.y - s.y, r.z - s.z);
-			return (handPinching[e] = handPinching[e] ? l < 0.04 : l < 0.026);
+			/* 3-frame debounce on top of the 0.026/0.04 m hysteresis */
+			const hy = (updateHandPinch.h ||= { left: { c: 0 }, right: { c: 0 } })[e],
+				want = handPinching[e] ? l < 0.04 : l < 0.026;
+			hy.c = want === handPinching[e] ? 0 : hy.c + 1;
+			hy.c >= 3 && ((handPinching[e] = want), (hy.c = 0));
+			return handPinching[e];
 		} catch {
 			return !1;
 		}
@@ -2621,6 +2631,52 @@ await (async function () {
 				(e.position.y += Math.cos(83 * n) * 0.0012),
 				(e.position.z += Math.sin(71 * n) * 0.0012)));
 	}
+	/* Hands-first affordance: glowing pinch reticle + soft wrist beam per tracked hand */
+	const pinchReticles = {};
+	for (const h of ["left", "right"]) {
+		const m = new Mesh(
+			new SphereGeometry(0.009, 16, 12),
+			new MeshBasicMaterial({ color: h === "left" ? 5227519 : 16740277, transparent: !0, opacity: 0.9, depthTest: !1, blending: AdditiveBlending }),
+		);
+		m.renderOrder = 2e3; m.visible = !1;
+		const halo = new Mesh(new SphereGeometry(0.02, 16, 12), new MeshBasicMaterial({ color: 16773800, transparent: !0, opacity: 0.25, depthTest: !1, depthWrite: !1, blending: AdditiveBlending }));
+		halo.renderOrder = 1999; m.add(halo); m.userData.halo = halo;
+		const bg = new BufferGeometry();
+		bg.setAttribute("position", new BufferAttribute(new Float32Array(6), 3));
+		const beam = new Line(bg, new LineBasicMaterial({ color: 16773800, transparent: !0, opacity: 0.35, depthTest: !1, blending: AdditiveBlending }));
+		beam.frustumCulled = !1; beam.renderOrder = 1998; beam.visible = !1;
+		scene.add(m, beam);
+		pinchReticles[h] = { m, beam };
+	}
+	const _pr0 = new Vector3(), _pr1 = new Vector3(), _pr2 = new Vector3();
+	function updatePinchReticles(t) {
+		const fr = handTrackingFrame, rs = renderer.xr.getReferenceSpace(), sess = renderer.xr.getSession();
+		for (const h of ["left", "right"]) {
+			const R = pinchReticles[h];
+			R.m.visible = R.beam.visible = !1;
+			if (!fr || !rs || !sess || !renderer.xr.isPresenting) continue;
+			let src = null;
+			for (const s of sess.inputSources) s.handedness === h && s.hand && (src = s);
+			if (!src) continue;
+			const jp = (n) => { const j = src.hand.get(n), p = j && fr.getJointPose(j, rs); return p && p.transform.position; };
+			const th = jp("thumb-tip"), ix = jp("index-finger-tip"), wr = jp("wrist");
+			if (!th || !ix || !wr) continue;
+			playerRig.updateWorldMatrix(!0, !1);
+			_pr0.set((th.x + ix.x) / 2, (th.y + ix.y) / 2, (th.z + ix.z) / 2).applyMatrix4(playerRig.matrixWorld);
+			_pr1.set(wr.x, wr.y, wr.z).applyMatrix4(playerRig.matrixWorld);
+			const d = Math.hypot(th.x - ix.x, th.y - ix.y, th.z - ix.z), pinch = d < 0.03;
+			R.m.position.copy(_pr0);
+			R.m.scale.setScalar(pinch ? 1.5 : 1);
+			R.m.userData.halo.material.opacity = 0.2 + 0.15 * Math.sin(10 * t) + (pinch ? 0.3 : 0);
+			R.m.visible = !0;
+			_pr2.copy(_pr0).sub(_pr1);
+			const a = R.beam.geometry.attributes.position;
+			a.setXYZ(0, _pr1.x, _pr1.y, _pr1.z);
+			a.setXYZ(1, _pr0.x + _pr2.x * 1.2, _pr0.y + _pr2.y * 1.2, _pr0.z + _pr2.z * 1.2);
+			a.needsUpdate = !0;
+			R.beam.visible = !0;
+		}
+	}
 	let lastPointerX = -99,
 		lastPointerY = -99;
 	(addEventListener(
@@ -2916,6 +2972,7 @@ await (async function () {
 				void setStatus("Max 12 emojis — press the wheel trigger again to send.")
 			);
 		(selectedEmoji.push(e),
+			faceSetMessage([e], 2600),
 			refreshSelectedEmojiStrip(),
 			setStatus("Selected " + e + " — press the wheel trigger again to send."),
 			stickPos.set(0, 0),
@@ -2950,10 +3007,7 @@ await (async function () {
 	}
 	function sendEmojiMessage(e, t) {
 		if (!(e = e.slice(0, MAX_EMOJI_PER_MESSAGE)).length) return;
-		if (!t)
-			try {
-				reactFaceToEmoji(e);
-			} catch {}
+		t || faceSetMessage(e);
 		{
 			let a = e.length;
 			for (let r = flyingEmojiMessages.length - 1; r >= 0; r--) {
@@ -3092,11 +3146,11 @@ await (async function () {
 		],
 		[
 			"🧚 Ask Spark",
-			"With the wheel closed, HOLD the index trigger on its own, speak your question, then let go. A ball of light forms and the fairy emerges to answer in emoji. In AR she also sees what your headset camera sees.",
+			"With the wheel closed, HOLD the index trigger (hands: hold an index pinch) on its own, speak your question, then let go. A ball of light forms and the fairy emerges to answer in emoji. In AR she also sees what your headset camera sees.",
 		],
 		[
 			"🎙️ Translate to emoji",
-			"Hold index + grip together on one controller (wheel closed), or hold the trigger of the wheel hand while the wheel is open. Speak, then let go to send. Wave your free hand in front of you to cancel.",
+			"HANDS: with the wheel closed, pinch both index fingers together and hold. Controllers: hold index + grip on one controller. Or hold the trigger / index pinch of the wheel hand while the wheel is open. Speak, then let go to send. Wave your free hand in front of you to cancel.",
 		],
 		[
 			"📷 AR / VR",
@@ -3105,10 +3159,6 @@ await (async function () {
 		[
 			"🕹️ Moving & pages",
 			"Left thumbstick walks (in AR it is off — you walk around your real home). Right thumbstick left/right flips wheel pages, or turns you when the wheel is closed. A jumps. B / Y closes the wheel without sending. HANDS ONLY (no controllers): beckon with a come-here motion to walk forward; push your open palm away to walk backward; swipe your hand left or right through the air to turn; flick both palms up to jump. Pinches are for the wheel and Spark.",
-		],
-		[
-			"🧒 Kid avatar",
-			"The short kid avatar wanders the room on its own, now and then notices you and strolls over slowly to say hi, then drifts off again. Face it (or walk up to it), then send emoji (close your wheel, or use voice). The kid sees your symbols and the room from the avatar's own eyes, then replies like a young child in VR — its own wheel opens and its arm drags the golden ball to each symbol before the answer appears above its head.",
 		],
 		[
 			"⚙️ Settings",
@@ -3700,7 +3750,7 @@ await (async function () {
 		"An image of what the speaker is currently looking at in their VR room is attached. It is CONTEXT ONLY: the spoken statement below is the sole thing to translate and stays the focus. Use the image just to understand the active scene (who or what is around, the setting, the mood) so that ambiguous words and the choice of symbols fit that context. Never describe the image, never add symbols for things that were not said, and ignore the image completely unless a word in the statement is ambiguous or points at something in it.";
 	async function requestSparkTranslation(e, t) {
 		let n = "";
-		const hasApi = Boolean(settings.key || settings.proxyUrl || settings.sparkUrl !== LEGACY_SPARK_URL);
+		const hasApi = cloudConsent && Boolean(settings.key || settings.proxyUrl || settings.sparkUrl !== LEGACY_SPARK_URL);
 		if (hasApi)
 			try {
 				const o = (s) =>
@@ -3808,9 +3858,6 @@ Statement: ` +
 			n.seq.length)
 		) {
 			(addHistoryEntry("🧚 Spark — translation", e, n.seq, n.via), sendEmojiMessage(n.seq));
-			try {
-				startKidReply(n.seq);
-			} catch {}
 		}
 	}
 	const ASK_SPARK_PROMPT =
@@ -3820,10 +3867,10 @@ Statement: ` +
 		AR_SCENE_IMAGE_NOTE = `The attached image is the REAL WORLD as seen through the speaker's headset cameras (AR passthrough). It is background context only, showing what they are looking at right now. Use it whenever the question points at something in it ("he/she/it/this", a bare noun with no name such as "the movie", or phrases like "in front of me"); otherwise ignore it. Speech may be slightly garbled; if words could be the title of a film, show, book, song or game, treat them as that title. Answer the question itself directly, never describe the scene. If no image is attached, answer from the question alone.`;
 	async function requestSparkAnswer(e, t) {
 		let n = "";
-		const hasApi = Boolean(settings.key || settings.proxyUrl || settings.sparkUrl !== LEGACY_SPARK_URL);
+		const hasApi = cloudConsent && Boolean(settings.key || settings.proxyUrl || settings.sparkUrl !== LEGACY_SPARK_URL);
 		if (hasApi)
 			try {
-				const o = arMode ? AR_SCENE_IMAGE_NOTE : VR_SCENE_IMAGE_NOTE,
+				const o = arMode ? (semanticFallbackUsed ? SEMANTIC_SCENE_NOTE : AR_SCENE_IMAGE_NOTE) : VR_SCENE_IMAGE_NOTE,
 					a = (i) =>
 						fetch(settings.sparkUrl, {
 							signal: AbortSignal.timeout(1e4),
@@ -4039,9 +4086,7 @@ Question: ` +
 		roomScanFound = !1,
 		lastPlaneScanTime = 0,
 		planeScanNotified = !1,
-		scanStartTime = 0,
-		kidPositioned = !1,
-		yr = !1;
+		scanStartTime = 0;
 	const groundPlaneGeometry = new PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
 		planeCenter = new Vector3(),
 		planeNormal = new Vector3(),
@@ -4059,10 +4104,8 @@ Question: ` +
 	function resetRoomScan() {
 		((scanStartTime = 0),
 			(planeScanNotified = !1),
-			(kidPositioned = !1),
-			(yr = !1),
 			(orbPlacedOnce = !1),
-			arMode || (clearScanPlanes(), (kidAvatar.position.x = 1.35), (kidAvatar.position.z = -3.35)));
+			arMode || clearScanPlanes());
 	}
 	function updateScanPlanes(e) {
 		if (!e) return;
@@ -4240,10 +4283,6 @@ Question: ` +
 		}
 		return n;
 	}
-	function clampPointToRoom(e, t) {
-		const n = arMode ? clampToRoomPlanes(e, t) : !1;
-		return clampToRoomBounds(e, t) || n;
-	}
 	function keepPlayerInRoom(e) {
 		const t = (keepPlayerInRoom.v ||= new Vector3());
 		getWorldPosition(camera, t);
@@ -4272,23 +4311,9 @@ Question: ` +
 		}
 		return clampToRoomBounds(e, t) || n;
 	}
-	function Hh() {
-		(getWorldPosition(camera, headPos),
-			camera.getWorldDirection(flatForward),
-			(flatForward.y = 0),
-			flatForward.lengthSq() < 0.04 ? flatForward.copy(lastForward) : flatForward.normalize(),
-			flatRight.crossVectors(flatForward, upVector).normalize());
-		const e = headPos.clone().addScaledVector(flatForward, 2).addScaledVector(flatRight, 0.5);
-		((e.y = 0),
-			clampToRoomPlanes(e, 0.5),
-			(kidAvatar.position.x = e.x),
-			(kidAvatar.position.z = e.z),
-			(kidPositioned = !0),
-			(yr = roomScanFound));
-	}
 
 	/* ---- Per-pixel real-world occlusion (WebXR Depth API, CPU-optimized) ----
-	   Kid + Spark materials discard any fragment that lies behind the real surface the headset sees
+	   Spark materials discard any fragment that lies behind the real surface the headset sees
 	   at that pixel (walls, furniture, doorways, your hands). Falls back to the plane/mesh occluders. */
 	const depthOcc = {
 		uniforms: {
@@ -4353,7 +4378,7 @@ Question: ` +
 		m.needsUpdate = !0;
 	}
 	function patchDepthRoots() {
-		for (const r of [kidAvatar, sparkOrb, sparkFairy, sparkAnswerGroup])
+		for (const r of [sparkOrb, sparkFairy, sparkAnswerGroup])
 			r &&
 				r.traverse((o) => {
 					const m = o.material;
@@ -4370,7 +4395,7 @@ Question: ` +
 			depthOcc.notified = !0;
 			setStatus(
 				usage === "cpu-optimized"
-					? "🫥 Depth occlusion on — Spark and the kid now hide behind real walls, furniture and doorways."
+					? "🫥 Depth occlusion on — Spark now hides behind real walls, furniture and doorways."
 					: "🫥 Per-pixel depth isn't available in this session (" +
 							(usage || "not granted") +
 							") — using room-scan occluders only. Run Space Setup and re-enter AR for best results.",
@@ -4379,6 +4404,12 @@ Question: ` +
 		if (usage !== "cpu-optimized" || !sess.depthDataFormat) return;
 		const now = performance.now();
 		now - depthOcc.lastPatch > 1500 && ((depthOcc.lastPatch = now), patchDepthRoots());
+		/* throttle depth texture refresh to ~30 Hz; keep last data bound in between */
+		if (depthOcc.tex[0] && now - (depthOcc.lastUpd || 0) < 33) {
+			U.uOn.value = 1;
+			return;
+		}
+		depthOcc.lastUpd = now;
 		const ref = renderer.xr.getReferenceSpace();
 		if (!ref) return;
 		const pose = frame.getViewerPose(ref);
@@ -4400,14 +4431,23 @@ Question: ` +
 			if (depthOcc.dims[i] !== key) {
 				depthOcc.tex[i] && depthOcc.tex[i].dispose();
 				depthOcc.tex[i] = fmt
-					? new THREE.DataTexture(new Float32Array(info.data), w, h, THREE.RedFormat, THREE.FloatType)
-					: new THREE.DataTexture(new Uint8Array(info.data), w, h, THREE.RGFormat, THREE.UnsignedByteType);
+					? new THREE.DataTexture(new Float32Array(info.data.buffer || info.data, info.data.byteOffset || 0, info.data.byteLength / 4), w, h, THREE.RedFormat, THREE.FloatType)
+					: new THREE.DataTexture(new Uint8Array(info.data.buffer || info.data, info.data.byteOffset || 0, info.data.byteLength), w, h, THREE.RGFormat, THREE.UnsignedByteType);
 				depthOcc.tex[i].minFilter = depthOcc.tex[i].magFilter = THREE.NearestFilter;
 				depthOcc.tex[i].generateMipmaps = !1;
 				depthOcc.dims[i] = key;
 			}
 			const t = depthOcc.tex[i];
-			t.image.data = fmt ? new Float32Array(info.data) : new Uint8Array(info.data);
+			/* zero-copy view over the depth buffer (info.data is an ArrayBuffer or a view of one) */
+			{
+				const d = info.data,
+					buf = d.buffer || d,
+					off = d.byteOffset || 0,
+					len = d.byteLength;
+				t.image.data = fmt
+					? new Float32Array(buf, off, len / 4)
+					: new Uint8Array(buf, off, len);
+			}
 			t.needsUpdate = !0;
 			const side = i === 0 ? "L" : "R";
 			U["uDepth" + side].value = t;
@@ -4461,10 +4501,6 @@ Question: ` +
 				u.light.position.copy(u.light.target.position).addScaledVector(u.dir, 40),
 				u.light.target.updateMatrixWorld());
 		}
-		!kidPositioned || (roomScanFound && !yr)
-			? Hh()
-			: (clampToRoomPlanes(kidAvatar.position, 0.45), keepInLineOfSight(kidAvatar.position, 0.9, 0.5),
-				clampToRoomPlanes(kidAvatar.position, 0.45));
 	}
 	function placeOrbPosition(e, t, n, o) {
 		(camera.getWorldDirection(flatForward),
@@ -6320,13 +6356,13 @@ Content-Type: audio/wav\r
 				(statusPanel.visible = !0),
 				statusPanel.userData.draw(
 					"🧚 Ask Spark…",
-					"Speak your question. A ball of light is forming in front of you — release the trigger and Spark will answer: the fairy emerges from it. Wave your free hand through this box to cancel.",
+					"Speak your question. A ball of light is forming in front of you — release the trigger (hands: let go of the pinch) and Spark will answer: the fairy emerges from it. Wave your free hand through this box to cancel.",
 				),
 				setStatus("🧚 Ask Spark — speak your question, release the trigger to send."))
 			: ((statusPanel.visible = !0),
 				statusPanel.userData.draw(
 					"🎙️ Listening…",
-					"Speak now. Release the trigger to send. Wave your right hand through this box to cancel.",
+					"Speak now. Release the trigger (or let go of the pinch) to send. Wave your right hand through this box to cancel.",
 				),
 				setStatus("Listening… release the trigger to send."));
 	}
@@ -6429,7 +6465,7 @@ Content-Type: audio/wav\r
 			t0: performance.now(),
 			watch: 0,
 		};
-		const hasApi = Boolean(settings.key || settings.proxyUrl || settings.transUrl !== DEFAULT_TRANSCRIBE_URL);
+		const hasApi = cloudConsent && Boolean(settings.key || settings.proxyUrl || settings.transUrl !== DEFAULT_TRANSCRIBE_URL);
 		if (!hasApi) {
 			if (SpeechRecognitionCtor) {
 				((activeCapture = t),
@@ -6614,7 +6650,12 @@ Content-Type: audio/wav\r
 			cancelCapture(activeCapture, "✂️ Cancelled — nothing was sent.");
 	}
 	const pointerNdc = new Vector2(),
+		touchStick = { x: 0, y: 0 },
 		keysDown = {};
+	function endDesktopPointer(e) {
+		if (e && activePtr !== null && e.pointerId !== activePtr) return;
+		((activePtr = null), (isPointerLocked = !1), (desktopTriggerDown = !1), (canvasEl.style.cursor = ""));
+	}
 	let desktopTriggerDown = !1;
 	(addEventListener("keydown", (e) => {
 		(e.target && e.target.tagName === "INPUT") ||
@@ -6652,11 +6693,15 @@ Content-Type: audio/wav\r
 				e.code === "KeyV" && endVoiceCapture());
 		}));
 	let cameraYaw = 0,
+		activePtr = null,
 		cameraPitch = 0,
 		isPointerLocked = !1,
 		lastMouseX = 0,
 		lastMouseY = 0;
-	(canvasEl.addEventListener("pointerdown", (e) => {
+	(canvasEl.addEventListener("contextmenu", (e) => e.preventDefault()),
+	canvasEl.addEventListener("pointerdown", (e) => {
+		if (activePtr !== null && e.pointerId !== activePtr) return;
+		if (isWheelOpen && activeInputSource === "desktop" && e.button === 2) return void removeLastPickedEmoji();
 		if (isWheelOpen && activeInputSource === "desktop") {
 			pointerNdc.set((e.clientX / innerWidth) * 2 - 1, -((e.clientY / innerHeight) * 2 - 1));
 			{
@@ -6676,22 +6721,28 @@ Content-Type: audio/wav\r
 						(pointerNdc.x * t.halfW - t.xOff) / t.sc,
 						(pointerNdc.y * t.halfH - t.yOff) / t.sc,
 					) > 0.42
-				)
-					return void closeWheelAndSend();
+				) {
+					if (e.pointerType === "mouse") return void closeWheelAndSend();
+					return;
+				}
 			}
 			desktopTriggerDown = !0;
-		} else ((isPointerLocked = !0), (lastMouseX = e.clientX), (lastMouseY = e.clientY));
+		} else ((isPointerLocked = !0), (lastMouseX = e.clientX), (lastMouseY = e.clientY), (canvasEl.style.cursor = "grabbing"));
+		activePtr = e.pointerId;
+		try {
+			canvasEl.setPointerCapture(e.pointerId);
+		} catch {}
 	}),
-		addEventListener("pointerup", () => {
-			((isPointerLocked = !1), (desktopTriggerDown = !1));
-		}),
+		canvasEl.addEventListener("pointerup", endDesktopPointer),
+		addEventListener("pointerup", endDesktopPointer),
+		addEventListener("pointercancel", endDesktopPointer),
 		addEventListener("pointermove", (e) => {
 			if (
 				(isPointerLocked &&
 					!renderer.xr.isPresenting &&
-					((cameraYaw -= 0.003 * (e.clientX - lastMouseX)),
+					((cameraYaw -= (e.pointerType === "touch" ? 0.005 : 0.003) * (e.clientX - lastMouseX)),
 					(cameraPitch = MathUtils.clamp(
-						cameraPitch - 0.003 * (e.clientY - lastMouseY),
+						cameraPitch - (e.pointerType === "touch" ? 0.005 : 0.003) * (e.clientY - lastMouseY),
 						-1.2,
 						1.2,
 					)),
@@ -7054,6 +7105,16 @@ Content-Type: audio/wav\r
 				squeeze: !1,
 			},
 		};
+	let handsTipShown = !1;
+	function showHandsTipOnce(h) {
+		if (handsTipShown) return;
+		try {
+			const src = [...(renderer.xr.getSession()?.inputSources || [])].find((x) => x.handedness === h && x.hand);
+			if (!src) return;
+			handsTipShown = !0;
+			showToast("🖐️ Hands tips", "Cancel: middle-pinch both hands. Flip pages: middle-pinch your free hand and swipe. Translate: pinch both index fingers.");
+		} catch {}
+	}
 	function openWheel(e) {
 		isWheelOpen ||
 			(playWheelShimmer(!0),
@@ -7074,10 +7135,11 @@ Content-Type: audio/wav\r
 			(gi = !1),
 			stickPos.set(0, 0),
 			stickTarget.set(0, 0),
+			showHandsTipOnce(e),
 			setStatus(
 				"Wheel open — page: " +
 					wheelPages[wheelPageIndex].name +
-					". Grab the ball with your other controller's pointer + trigger and drag it to an emoji to pick it. Left thumbstick walks; right thumbstick left/right flips pages.",
+					". Grab the ball with your other controller's pointer + trigger and drag it to an emoji to pick it. Left thumbstick walks; right thumbstick left/right flips pages. Hands: middle-pinch both hands to cancel; middle-pinch your free hand and swipe to flip pages.",
 			));
 	}
 	function closeWheelAndReset() {
@@ -7102,9 +7164,6 @@ Content-Type: audio/wav\r
 				refreshSelectedEmojiStrip(),
 				sendEmojiMessage(e),
 				setStatus("Sent above your head: " + e.join(" ")));
-			try {
-				startKidReply(e);
-			} catch {}
 		}
 	}
 	const ps = new Group();
@@ -7231,10 +7290,6 @@ Content-Type: audio/wav\r
 				mirrorFrame &&
 					(mirrorFrame.scale.set(u, h, 1), mirrorFrame.position.set(r, 1.55 * h, t.z0 + 0.01)),
 				mirrorToggleButton.position.set(r, 0.7, t.z0 + 0.08));
-		} catch {}
-		try {
-			((kidAvatar.position.x = Math.max(t.x0 + 0.6, Math.min(t.x1 - 0.6, kidAvatar.position.x))),
-				(kidAvatar.position.z = Math.max(t.z0 + 0.6, Math.min(t.z1 - 0.6, kidAvatar.position.z))));
 		} catch {}
 		buildFurnitureStandIns();
 	}
@@ -7500,8 +7555,6 @@ Content-Type: audio/wav\r
 					),
 					!1
 				);
-			let n = !1;
-			t === "immersive-ar" && (n = await startArCamera());
 			const o = await navigator.xr.requestSession(t, {
 				optionalFeatures: [
 					"local-floor",
@@ -7520,8 +7573,8 @@ Content-Type: audio/wav\r
 				},
 			});
 			return (
-				renderer.xr.setFramebufferScaleFactor(1.5),
-				renderer.xr.setFoveation(0),
+				renderer.xr.setFramebufferScaleFactor(1.2),
+				renderer.xr.setFoveation(1),
 				(xrSessionMode = t),
 				o.addEventListener("end", () => {
 					((xrSessionMode = null),
@@ -7530,6 +7583,7 @@ Content-Type: audio/wav\r
 						(byId("vrBtn").textContent = "Enter VR"));
 				}),
 				await renderer.xr.setSession(o),
+				t === "immersive-ar" && startArCamera().catch(() => {}),
 				setArMode(e === "ar"),
 				(byId(e === "ar" ? "arBtn" : "vrBtn").textContent =
 					e === "ar" ? "📷 In AR — real world" : "In VR — use controllers"),
@@ -7596,13 +7650,21 @@ Content-Type: audio/wav\r
 			}
 		}
 	}
+	const withConsent = (go) => {
+		if (consentAnswered() || renderer.xr.isPresenting) return go();
+		byId("consent").classList.add("open");
+		byId("consentYes").onclick = () => { setCloudConsent(!0); byId("consent").classList.remove("open"); go(); };
+		byId("consentNo").onclick = () => { setCloudConsent(!1); byId("consent").classList.remove("open"); go(); };
+	};
 	((byId("vrBtn").onclick = () => {
-		renderer.xr.isPresenting && xrSessionMode === "immersive-ar"
-			? arMode && toggleArVr()
-			: startXRSession("vr");
+		withConsent(() =>
+			renderer.xr.isPresenting && xrSessionMode === "immersive-ar"
+				? arMode && toggleArVr()
+				: startXRSession("vr"),
+		);
 	}),
 		(byId("arBtn").onclick = () => {
-			renderer.xr.isPresenting ? toggleArVr() : startXRSession(arMode ? "vr" : "ar");
+			withConsent(() => (renderer.xr.isPresenting ? toggleArVr() : startXRSession(arMode ? "vr" : "ar")));
 		}),
 		addEventListener("resize", () => {
 			((camera.aspect = innerWidth / innerHeight),
@@ -7610,61 +7672,26 @@ Content-Type: audio/wav\r
 				renderer.setSize(innerWidth, innerHeight));
 		}));
 	const clock = new THREE.Clock(),
-		kidFlatPos = new Vector3(),
-		toKidFlat = new Vector3(),
-		kidBallWorldPos = new Vector3(),
+		scratchPos = new Vector3(),
+		scratchLook = new Vector3(),
+		scratchWorld = new Vector3(),
 		wheelPlane = new THREE.Plane(),
 		wheelPlaneHit = new Vector3();
-	let Hr = 0.11,
-		avatarScale = 1,
-		bodyTopY = 1.8,
-		peakReach = 0,
-		avatarBodyDrop = 0,
+	let bodyTopY = 1.8,
 		Wc = !1,
 		Ic = !1;
 	const avatarVelocity = new Vector3();
 	let walkPhase = 0,
 		avatarYaw = 0;
 	const leftHandRest = new Vector3(-0.2, 0.74, -0.03),
-		rightHandRest = new Vector3(0.2, 0.74, -0.03),
-		D1 = new Vector3(),
-		T1 = new Vector3(),
-		handSwayOffset = new Vector3(),
-		handLocalPos = new Vector3(),
-		invHandQuat = new Quaternion();
-	function clampHandReach(e, t, n, o, a, r) {
-		(invHandQuat.copy(a).invert(), handLocalPos.copy(t).sub(e).applyQuaternion(invHandQuat));
-		const s = MathUtils.clamp,
-			l = s((handLocalPos.y + 0.15) / 0.55, 0, 1),
-			i = s(-handLocalPos.z / 0.55, 0, 1),
-			c = s((-o * handLocalPos.x) / 0.4, 0, 1);
-		handSwayOffset.set(
-			0.012 * -o * c - 0.008 * o * l,
-			0.05 * l - 0.01 * (1 - l),
-			-0.035 * i - 0.012 * c,
-		);
-		const d = Math.min(Math.max(0, handLocalPos.length() - 0.58), 0.07);
-		return (
-			d > 0 && (handLocalPos.normalize(), handSwayOffset.addScaledVector(handLocalPos, d)),
-			n.lerp(handSwayOffset, r),
-			e.add(handSwayOffset.copy(n).applyQuaternion(a))
-		);
-	}
+		rightHandRest = new Vector3(0.2, 0.74, -0.03);
 	const E1 = new Vector3();
 	function elbowHint(e, t) {
 		return E1.set(0.3 * e, -0.65, 0.45)
 			.applyQuaternion(t)
 			.clone();
 	}
-	const upperArmLength = 0.46,
-		forearmLength = 0.46,
-		referenceReach = 1.68,
-		leftHandRotationFix = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2),
-		rightHandRotationFix = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), -Math.PI / 2),
-		leftHandQuat = new Quaternion(),
-		rightHandQuat = new Quaternion(),
-		forearmTilt = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), -1.35),
-		I1 = 30;
+	const I1 = 30;
 	let Si = !1;
 	const q1 = new Vector3(0, 1, 0);
 	function snapTurn(e) {
@@ -7874,6 +7901,141 @@ Content-Type: audio/wav\r
 		} catch {}
 		((byId("kMeta").value = ""), updateKeyStatusLabel());
 	}
+	/* ---- desktop quality-of-life: stuck-key reset, wheel page scroll, Esc/Enter/Backspace ---- */
+	function resetDesktopInput() {
+		try {
+			for (const k in keysDown) keysDown[k] = !1;
+			((keyLHeld = !1), (desktopTriggerDown = !1), (isPointerLocked = !1), (activePtr = null), (canvasEl.style.cursor = ""));
+			triggerDownTime.desktop = 0;
+			bi && !renderer.xr.isPresenting && ((bi = !1), endVoiceCapture());
+		} catch {}
+	}
+	addEventListener("blur", resetDesktopInput);
+	document.addEventListener("visibilitychange", () => document.hidden && resetDesktopInput());
+	let lastWheelFlip = 0;
+	canvasEl.addEventListener(
+		"wheel",
+		(e) => {
+			if (!isWheelOpen || activeInputSource !== "desktop") return;
+			e.preventDefault();
+			const now = performance.now(),
+				d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+			if (now - lastWheelFlip > 160 && Math.abs(d) > 1) {
+				lastWheelFlip = now;
+				setWheelPage(wheelPageIndex + (d > 0 ? 1 : -1));
+			}
+		},
+		{ passive: !1 },
+	);
+	addEventListener("keydown", (e) => {
+		const tg = e.target && e.target.tagName;
+		if (tg === "INPUT" || tg === "TEXTAREA" || renderer.xr.isPresenting) return;
+		if (e.code === "ArrowUp" || e.code === "ArrowDown" || e.code === "ArrowLeft" || e.code === "ArrowRight") e.preventDefault();
+		if (!isWheelOpen || activeInputSource !== "desktop" || statusPanelVisible || pendingKeyboardEntry) return;
+		if (e.code === "Escape") closeWheelAndReset();
+		else if ((e.code === "Enter" || e.code === "NumpadEnter") && !e.repeat) (e.preventDefault(), closeWheelAndSend());
+		else if (e.code === "Backspace") (e.preventDefault(), removeLastPickedEmoji());
+	});
+	/* ---- touch UI: virtual stick, wheel / voice / jump buttons ---- */
+	{
+		const ui = document.createElement("div");
+		ui.id = "touchUI";
+		ui.innerHTML =
+			'<div id="tJoy"><div id="tKnob"></div></div><div id="tActs">' +
+			'<div class="row"><button id="tPrev" class="hide" aria-label="Previous page">◀</button><button id="tNext" class="hide" aria-label="Next page">▶</button><button id="tUndo" class="hide" aria-label="Remove last emoji">⌫</button></div>' +
+			'<div class="row"><button id="tJump" aria-label="Jump">⤒</button><button id="tSay" aria-label="Hold to translate to emoji">🎙️</button><button id="tAsk" aria-label="Hold to ask Spark">🧚</button></div>' +
+			'<div class="row"><button id="tCancel" class="hide">✕</button><button id="tWheel">🎡 Emoji</button></div></div>' +
+			'<div id="tHint">Left: move · Drag: look · Hold 🧚 / 🎙️ and speak · slide off to cancel</div>';
+		document.body.appendChild(ui);
+		const $ = (id) => document.getElementById(id),
+			joy = $("tJoy"),
+			knob = $("tKnob");
+		const showTouch = () => document.body.classList.add("touch-on");
+		try {
+			matchMedia("(pointer:coarse)").matches && showTouch();
+		} catch {}
+		addEventListener("pointerdown", (e) => e.pointerType === "touch" && showTouch(), { passive: !0 });
+		let joyId = null;
+		const joyMove = (e) => {
+			const r = joy.getBoundingClientRect(),
+				R = r.width / 2;
+			let dx = e.clientX - (r.left + R),
+				dy = e.clientY - (r.top + R);
+			const L = Math.hypot(dx, dy);
+			L > R && ((dx = (dx / L) * R), (dy = (dy / L) * R));
+			knob.style.transform = "translate(" + dx + "px," + dy + "px)";
+			touchStick.x = dx / R;
+			touchStick.y = dy / R;
+		};
+		const joyEnd = (e) => {
+			if (joyId === null || (e && e.pointerId !== joyId)) return;
+			joyId = null;
+			touchStick.x = touchStick.y = 0;
+			knob.style.transform = "";
+		};
+		joy.addEventListener("pointerdown", (e) => {
+			if (joyId !== null) return;
+			((joyId = e.pointerId), joy.setPointerCapture(e.pointerId), joyMove(e), e.preventDefault());
+		});
+		joy.addEventListener("pointermove", (e) => e.pointerId === joyId && joyMove(e));
+		joy.addEventListener("pointerup", joyEnd);
+		joy.addEventListener("pointercancel", joyEnd);
+		window.addEventListener("blur", () => joyEnd());
+		const tap = (id, fn) => $(id).addEventListener("click", (e) => (e.preventDefault(), fn()));
+		tap("tWheel", () => {
+			if (pendingKeyboardEntry || statusPanelVisible) return;
+			isWheelOpen ? closeWheelAndSend() : openWheel("desktop");
+		});
+		tap("tCancel", () => isWheelOpen && closeWheelAndReset());
+		tap("tPrev", () => isWheelOpen && setWheelPage(wheelPageIndex - 1));
+		tap("tNext", () => isWheelOpen && setWheelPage(wheelPageIndex + 1));
+		tap("tUndo", () => isWheelOpen && removeLastPickedEmoji());
+		tap("tJump", () => {
+			playerRig.position.y <= 0.001 && jumpVelocity === 0 && (jumpVelocity = 3.4);
+		});
+		/* hold-to-talk buttons; releasing outside the button cancels */
+		const holdBtn = (id, start) => {
+			const b = $(id);
+			let pid = null;
+			b.addEventListener("pointerdown", (e) => {
+				if (pid !== null || pendingKeyboardEntry || statusPanelVisible) return;
+				e.preventDefault();
+				pid = e.pointerId;
+				try {
+					b.setPointerCapture(pid);
+				} catch {}
+				start();
+				statusPanelVisible ? b.classList.add("on") : (pid = null);
+			});
+			const end = (e, cancelled) => {
+				if (pid === null || e.pointerId !== pid) return;
+				pid = null;
+				b.classList.remove("on");
+				const r = b.getBoundingClientRect(),
+					out = e.clientX < r.left - 30 || e.clientX > r.right + 30 || e.clientY < r.top - 30 || e.clientY > r.bottom + 30;
+				if (cancelled || out) cancelCaptureIfActive();
+				else statusPanelVisible && endVoiceCapture();
+			};
+			b.addEventListener("pointerup", (e) => end(e, !1));
+			b.addEventListener("pointercancel", (e) => end(e, !0));
+		};
+		holdBtn("tAsk", () => {
+			isWheelOpen && closeWheelAndReset();
+			beginVoiceCapture("ask");
+		});
+		holdBtn("tSay", () => beginVoiceCapture());
+		setInterval(() => {
+			try {
+				const xr = renderer.xr.isPresenting,
+					open = isWheelOpen && activeInputSource === "desktop";
+				ui.style.display = xr ? "none" : "";
+				$("tWheel").textContent = open ? (selectedEmoji.length ? "➤ Send" : "🎡 Close") : "🎡 Emoji";
+				$("tWheel").classList.toggle("on", open);
+				for (const id of ["tPrev", "tNext", "tCancel"]) $(id).classList.toggle("hide", !open);
+				$("tUndo").classList.toggle("hide", !open || !selectedEmoji.length);
+			} catch {}
+		}, 150);
+	}
 	function onControllerConnected(e) {
 		const t = e.inputSource && e.inputSource.handedness;
 		(t !== "left" && t !== "right") ||
@@ -7916,14 +8078,13 @@ Content-Type: audio/wav\r
 		}),
 		hiddenTextInput.addEventListener("blur", () => finishKeyboardEntry()),
 		renderer.xr.addEventListener("sessionstart", () => {
-			((peakReach = 0),
-				(avatarScale = 1),
-				(avatarBodyDrop = 0),
-				leftHandRest.set(-0.2, 0.74, -0.03),
-				rightHandRest.set(0.2, 0.74, -0.03));
+			(leftHandRest.set(-0.2, 0.74, -0.03), rightHandRest.set(0.2, 0.74, -0.03));
 			const e = renderer.xr.getSession();
 			if (!e) return;
 			e.addEventListener("selectstart", onControllerConnected);
+			/* unlock audio on session start and first XR select */
+			try { getAudioContext(); } catch {}
+			e.addEventListener("selectstart", () => { try { getAudioContext(); } catch {} });
 			const t = (n, o, a) => {
 				const r = n.inputSource && n.inputSource.handedness;
 				(r !== "left" && r !== "right") || (a[r] = o);
@@ -8044,7 +8205,6 @@ Content-Type: audio/wav\r
 			reachOffsetLocal
 				.copy(reachPointWorld)
 				.sub(playerAvatar.position)
-				.divideScalar(avatarScale)
 				.sub(e));
 		const o = reachOffsetLocal.length();
 		return !(
@@ -8061,93 +8221,6 @@ Content-Type: audio/wav\r
 		document.documentElement.addEventListener("mouseleave", () => {
 			lastPointerX = lastPointerY = -99;
 		}));
-	const playerFace = {
-			jaw: 0,
-			smile: 0,
-			frown: 0,
-			pucker: 0,
-			blinkL: 0,
-			blinkR: 0,
-			brow: 0,
-			browIn: 0,
-			angry: 0,
-			cheek: 0,
-			wide: 0,
-			teeth: 0,
-			press: 0,
-		},
-		playerFaceOverride = {
-			until: 0,
-			dur: 1,
-			jaw: 0,
-			smile: 0,
-			frown: 0,
-			brow: 0,
-			angry: 0,
-		},
-		happyEmojis = [
-			"😀",
-			"😂",
-			"😍",
-			"😎",
-			"🥰",
-			"😊",
-			"🙂",
-			"😁",
-			"🤣",
-			"😄",
-			"😃",
-			"😆",
-			"🥳",
-			"😉",
-			"😋",
-			"🤩",
-			"❤",
-			"👍",
-			"🎉",
-			"🙌",
-			"👏",
-			"😇",
-		],
-		sadEmojis = ["😢", "😭", "😞", "😔", "🥺", "😟", "😥", "😓", "💔", "😰"],
-		angryEmojis = ["😡", "😠", "🤬", "😤", "😈", "👿"],
-		surprisedEmojis = ["😮", "😲", "😱", "😳", "🤯", "😨", "🫢"];
-	function reactFaceToEmoji(e) {
-		const t = {
-			smile: 0,
-			sad: 0,
-			angry: 0,
-			surp: 0,
-		};
-		for (const o of e) {
-			const a = o.replace(/️/g, "");
-			happyEmojis.some((r) => a.startsWith(r))
-				? t.smile++
-				: sadEmojis.some((r) => a.startsWith(r))
-					? t.sad++
-					: angryEmojis.some((r) => a.startsWith(r))
-						? t.angry++
-						: surprisedEmojis.some((r) => a.startsWith(r)) && t.surp++;
-		}
-		const n = Object.entries(t).sort((o, a) => a[1] - o[1])[0];
-		n &&
-			n[1] &&
-			((playerFaceOverride.jaw =
-				playerFaceOverride.smile =
-				playerFaceOverride.frown =
-				playerFaceOverride.brow =
-				playerFaceOverride.angry =
-					0),
-			n[0] === "smile"
-				? ((playerFaceOverride.smile = 1), (playerFaceOverride.brow = 0.3))
-				: n[0] === "sad"
-					? ((playerFaceOverride.frown = 1), (playerFaceOverride.brow = 0.2))
-					: n[0] === "angry"
-						? ((playerFaceOverride.angry = 1), (playerFaceOverride.frown = 0.5))
-						: ((playerFaceOverride.jaw = 0.7), (playerFaceOverride.brow = 1)),
-			(playerFaceOverride.dur = 3800),
-			(playerFaceOverride.until = performance.now() + playerFaceOverride.dur));
-	}
 	const micLipSync = {
 			ctx: null,
 			an: null,
@@ -8338,214 +8411,6 @@ Content-Type: audio/wav\r
 			Object.keys(a).length ? a : null
 		);
 	}
-	let smileTimer = 1.5,
-		isSmiling = !1,
-		smileAmount = 0,
-		ol = !1,
-		Di = 2,
-		reactionTimer = 0,
-		al = 0,
-		browRaise = 0,
-		browTilt = 0;
-	const eyeJitter = {
-			x: 0,
-			y: 0,
-		},
-		fairyLocalPos = new Vector3();
-	function updatePlayerFace(e, t) {
-		const n = playerAvatarParts.face,
-			o = performance.now();
-		if (!n) return;
-		analyseMicFrame(e);
-		const a = {
-				jaw: micLipSync.jaw,
-				smile: micLipSync.smile + 0.06,
-				frown: 0,
-				pucker: micLipSync.pucker,
-				blinkL: 0,
-				blinkR: 0,
-				brow: 0.12 * micLipSync.jaw + 0.45 * micLipSync.emph,
-				browIn: 0,
-				angry: 0,
-				cheek: 0,
-				wide: micLipSync.wide,
-				teeth: micLipSync.teeth,
-				press: micLipSync.press,
-			},
-			r =
-				o < playerFaceOverride.until
-					? Math.min(
-							1,
-							(playerFaceOverride.until - o) / 600,
-							(playerFaceOverride.dur - (playerFaceOverride.until - o)) / 150 + 0.2,
-						)
-					: 0;
-		(r > 0 &&
-			((a.smile = Math.max(a.smile, playerFaceOverride.smile * r)),
-			(a.frown = Math.max(a.frown, playerFaceOverride.frown * r)),
-			(a.jaw = Math.max(a.jaw, playerFaceOverride.jaw * r)),
-			(a.brow = Math.max(a.brow, playerFaceOverride.brow * r)),
-			(a.angry = Math.max(a.angry, playerFaceOverride.angry * r)),
-			(a.browIn = Math.max(a.browIn, playerFaceOverride.frown * r * 0.8))),
-			(smileTimer -= e),
-			smileTimer <= 0 &&
-				((isSmiling = !isSmiling),
-				(smileTimer = isSmiling ? 2 + 2.5 * Math.random() : 2.5 + 4 * Math.random())),
-			(smileAmount += ((isSmiling ? 0.22 : 0) - smileAmount) * Math.min(1, 1.6 * e)),
-			(a.smile = Math.max(a.smile, smileAmount)),
-			(Di -= e),
-			Di <= 0 &&
-				((reactionTimer = 0.17),
-				(Di = 1.8 + 4.5 * Math.random()),
-				Math.random() < 0.18 && (Di = 0.25)));
-		let s = 0;
-		if (reactionTimer > 0) {
-			reactionTimer -= e;
-			const P = 1 - Math.max(0, reactionTimer) / 0.17;
-			s = P < 0.4 ? P / 0.4 : (1 - P) / 0.6;
-		}
-		a.blinkL = a.blinkR = clamp(s, 0, 1);
-		const l = readXRFaceTracking(currentXRFrame);
-		if (l) {
-			for (const P in l) a[P] = l[P];
-			"jaw" in l && ((a.wide = 0), (a.press = 0), (a.teeth = l.jaw > 0.12 ? 0.5 : 0));
-		}
-		((a.blinkL = 0.04 + 0.96 * clamp(a.blinkL, 0, 1)),
-			(a.blinkR = 0.04 + 0.96 * clamp(a.blinkR, 0, 1)));
-		for (const P in playerFace)
-			playerFace[P] +=
-				(a[P] - playerFace[P]) * Math.min(1, e * (P.indexOf("blink") === 0 ? 40 : 18));
-		const i =
-				0.04 *
-				(1 +
-					0.45 * playerFace.smile +
-					0.8 * playerFace.wide +
-					0.3 * playerFace.jaw -
-					0.5 * playerFace.pucker),
-			c = playerFace.jaw,
-			d = 0.0025 * c + 0.0012 * playerFace.smile - 8e-4 * playerFace.press,
-			h = -0.0062 - 0.024 * c + 0.001 * playerFace.smile + 0.0015 * playerFace.press;
-		((n.upLip.position.y = d), (n.loLip.position.y = h));
-		{
-			const P = (1 + 0.8 * playerFace.pucker) * (1 - 0.35 * playerFace.press);
-			(n.upLip.scale.set(i / 0.04, P, 1), n.loLip.scale.set(i / 0.04, P, 1));
-		}
-		const u = 0.0075 * playerFace.smile + 0.005 * playerFace.wide - 0.006 * playerFace.frown;
-		for (const P of [n.upLip, n.loLip])
-			P.userData.sides.forEach((L, O) => {
-				const z = O ? 1 : -1;
-				((L.position.y = 0.5 * u), (L.rotation.z = z * Math.atan2(u, 0.0145) * 0.95));
-			});
-		const b = 8e-4 * Math.sin(2.3 * t) * playerFace.jaw;
-		((n.mouth.position.y = -0.062 - 0.002 * playerFace.frown),
-			(n.mouth.position.z = -0.099 - 0.007 * playerFace.pucker),
-			(n.mouth.position.x = 0.0012 * Math.sin(3.1 * t) * playerFace.jaw));
-		const f = Math.max(5e-4, d - h - 0.0062);
-		((n.inner.visible = c > 0.03),
-			(n.inner.position.y = (d + h) / 2),
-			n.inner.scale.set(i * (0.46 - 0.1 * playerFace.pucker), f / 2, 0.003));
-		{
-			const P = playerFace.teeth > 0.04 && f > 0.0035;
-			if (
-				((n.teethU.visible = P),
-				(n.teethL.visible = P && f > 0.008 && playerFace.teeth > 0.25),
-				(n.tongue.visible = f > 0.011),
-				P)
-			) {
-				const L = Math.min(1, f / 0.007);
-				(n.teethU.scale.set((0.7 * i) / 0.03, L, 1),
-					(n.teethU.position.y = d - 0.0031 - 0.0022 * L),
-					n.teethL.scale.set((0.6 * i) / 0.03, 0.8 * Math.min(1, (f - 0.008) / 0.006) + 0.2, 1),
-					(n.teethL.position.y = h + 0.00375 + 0.001));
-			}
-			n.tongue.visible &&
-				(n.tongue.scale.set(0.28 * i, 0.0035 + 0.0015 * c, 0.004),
-				(n.tongue.position.y = h + 0.0058));
-		}
-		const w = (d + h) / 2 + u;
-		(n.cornerL.position.set(-i / 2, w - b, 0),
-			n.cornerR.position.set(i / 2, w + b, 0),
-			(n.jaw.position.y = -0.055 - 0.014 * c));
-		for (const P of ["L", "R"]) {
-			const L = n["brow" + P],
-				O = L.userData.s;
-			((L.position.y =
-				0.049 + 0.008 * playerFace.brow + 0.005 * playerFace.browIn - 0.007 * playerFace.angry),
-				(L.rotation.z = L.userData.rz + O * playerFace.angry * 0.4 - O * playerFace.browIn * 0.3));
-			let z = P === "L" ? playerFace.blinkL : playerFace.blinkR;
-			z = Math.min(
-				1,
-				Math.max(
-					0,
-					z +
-						0.05 * playerFace.smile +
-						0.3 * playerFace.angry +
-						0.4 * Math.max(0, -browTilt) -
-						0.06 * Math.max(0, browTilt),
-				),
-			);
-			const R = n["lid" + P];
-			((R.visible = z > 0.03), (R.scale.y = Math.max(0.01, z)), (R.position.y = 0.038 - 0.016 * z));
-		}
-		((al -= e),
-			al <= 0 &&
-				((al = 1 + 3 * Math.random()),
-				(eyeJitter.x = 0.7 * (Math.random() - 0.5)),
-				(eyeJitter.y = 0.4 * (Math.random() - 0.5))));
-		let x = eyeJitter.x,
-			M = eyeJitter.y,
-			S = null;
-		(isWheelOpen ? (S = emojiWheel.position) : sparkFairy.visible && (S = sparkFairy.position),
-			S &&
-				(fairyLocalPos.copy(S),
-				playerAvatarParts.head.worldToLocal(fairyLocalPos),
-				fairyLocalPos.z < -0.05 &&
-					((x = clamp(fairyLocalPos.x / -fairyLocalPos.z, -1, 1)),
-					(M = clamp(fairyLocalPos.y / -fairyLocalPos.z, -1, 1)))));
-		const A = Math.min(1, 14 * e);
-		((browRaise += (x - browRaise) * A), (browTilt += (M - browTilt) * A));
-		for (const P of ["L", "R"]) {
-			const L = n["eye" + P];
-			L.position.set(
-				L.userData.b.x + 0.0035 * browRaise,
-				L.userData.b.y + 0.0025 * browTilt,
-				L.userData.b.z,
-			);
-		}
-	}
-	function poseFingers(e, t, n, o, a, r, s) {
-		const l = e.userData.c,
-			i = e.userData.fs,
-			c = Math.min(1, 18 * a),
-			d = r
-				? [s ? 0 : 0.9 * t + 0.1 * n, 0.2 + 0.8 * n, 0.2 + 0.8 * n, 0.2 + 0.8 * n, o ? 0.9 : 0]
-				: [0.3, 0.3, 0.3, 0.3, 0.3];
-		(r && s && ((d[0] = 0), (d[1] = d[2] = d[3] = 0.9), (d[4] = 0.5)),
-			r && !s && ((d[1] = Math.min(1, d[1] + 0.12 * t)), (d[2] = Math.min(1, d[2] + 0.04 * t))));
-		const h = e.userData.sg,
-			u = performance.now() / 1e3,
-			b = [0.92, 1, 1.05, 1.12];
-		i.forEach((f, w) => {
-			l[w] += (d[w] - l[w]) * c;
-			const x = l[w],
-				M = 1 - x,
-				S = 0.025 * Math.sin(1.3 * u + 1.9 * w + (h > 0 ? 1.1 : 0)) * M;
-			if (f.th)
-				((f.p1.rotation.x = 0.5 * -x - 0.1 + 0.6 * S),
-					(f.p1.rotation.y = f.baseY - h * x * 0.6),
-					(f.p1.rotation.z = h * (0.08 + x * 0.3)),
-					(f.p2.rotation.x = 0.95 * -x - 0.08 - S));
-			else {
-				const A = b[w],
-					P = 0.1 * (w - 1.5) * M * M;
-				((f.p1.rotation.x = -(0.1 + 0.07 * w) - 1.15 * x * A - S),
-					(f.p1.rotation.y = P),
-					(f.p1.rotation.z = 0.015 * (w - 1.5) * M),
-					(f.p2.rotation.x = -(0.15 + 0.09 * w) - 1.42 * x * A - 1.3 * S),
-					(f.p3.rotation.x = -(0.07 + 0.045 * w) - 0.88 * x * A - 0.8 * S));
-			}
-		});
-	}
 	const skyDome = new Mesh(
 		new SphereGeometry(50, 24, 16),
 		new MeshBasicMaterial({
@@ -8560,1935 +8425,123 @@ Content-Type: audio/wav\r
 		(skyDome.frustumCulled = !1),
 		(skyDome.visible = !1),
 		scene.add(skyDome));
-	const kidAvatar = new Group();
-	(kidAvatar.position.set(1.35, 0, -3.35), scene.add(kidAvatar));
-	const rl = new Object3D();
-	(rl.position.set(0, 1.02, 0), kidAvatar.add(rl));
-	const ll = new Object3D();
-	(ll.position.set(0, 1.12, 0), kidAvatar.add(ll));
-	let kidRightArm,
-		kidLeftArm,
-		kidBody,
-		kidHead,
-		kidEyes = [],
-		l0 = null;
-	const kidFeet = [],
-		kidFace = {
-			jaw: 0,
-			smile: 0,
-			frown: 0,
-			pucker: 0,
-			blinkL: 0,
-			blinkR: 0,
-			brow: 0,
-			browIn: 0,
-			angry: 0,
-			lids: 0,
-		},
-		kidFaceOverride = {
-			until: 0,
-			dur: 1,
-			jaw: 0,
-			smile: 0,
-			frown: 0,
-			pucker: 0,
-			brow: 0,
-			browIn: 0,
-			angry: 0,
-			lids: 0,
-		};
-	{
-		new MeshStandardMaterial({
-			color: 2450411,
-			roughness: 0.75,
-		});
-		const e = new MeshStandardMaterial({
-				color: 4479098,
-				roughness: 0.92,
-			}),
-			t = new MeshStandardMaterial({
-				color: 9263675,
-				roughness: 0.6,
-			}),
-			n = new MeshBasicMaterial({
-				color: 1313285,
-			}),
-			o = (z, R) => ((z.castShadow = !0), R != null && (z.position.y = R), kidAvatar.add(z), z),
-			a = new MeshStandardMaterial({
-				color: 16777215,
-				vertexColors: !0,
-				roughness: 0.85,
-			}),
-			r = [],
-			s = new MeshStandardMaterial({
-				color: 1920728,
-				roughness: 0.85,
-			}),
-			l = new MeshStandardMaterial({
-				color: 1059166,
-				roughness: 0.55,
-			}),
-			i = new MeshStandardMaterial({
-				color: 14411775,
-				roughness: 0.7,
-			}),
-			c = (z, R) => {
-				const T = new Mesh(
-					new THREE.LatheGeometry(
-						z.map((V) => new Vector2(V[0], V[1])),
-						28,
-					),
-					R,
-				);
-				return ((T.castShadow = !0), kidAvatar.add(T), T);
-			},
-			d = c(
-				[
-					[0.1585, 0.405],
-					[0.1585, 0.435],
-					[0.157, 0.46],
-					[0.154, 0.5],
-					[0.152, 0.55],
-					[0.158, 0.64],
-					[0.164, 0.7],
-					[0.152, 0.76],
-					[0.122, 0.82],
-					[0.085, 0.856],
-					[0.062, 0.878],
-					[0.001, 0.89],
-				],
-				a,
-			);
-		(d.scale.set(1, 1, 0.82), r.push(d));
-		const h = new Mesh(new TorusGeometry(0.062, 0.015, 10, 32), s);
-		((h.rotation.x = Math.PI / 2),
-			h.scale.set(1.12, 1, 0.9),
-			h.position.set(0, 0.872, -0.004),
-			(h.castShadow = !0),
-			kidAvatar.add(h));
-		const u = new Mesh(new CylinderGeometry(0.058, 0.058, 0.372, 24), a);
-		((u.rotation.z = Math.PI / 2),
-			u.position.set(0, 0.762, 0),
-			(u.castShadow = !0),
-			kidAvatar.add(u),
-			r.push(u),
-			c(
-				[
-					[0.001, 0.27],
-					[0.115, 0.285],
-					[0.15, 0.34],
-					[0.145, 0.42],
-					[0.14, 0.475],
-					[0.001, 0.485],
-				],
-				e,
-			).scale.set(1, 1, 0.85));
+	addEventListener("pointerdown", () => startLipSyncMic(), { once: !0 });
+	const stickYawQuat = new Quaternion(),
+		stickHeadC = new Vector3(),
+		stickCamQ = new Quaternion(),
+		stickTmp = new Vector3();
+	function updateStickMan(dt, t, ga, gb, presenting) {
+		const P = playerAvatarParts,
+			camQ = camera.getWorldQuaternion(stickCamQ);
+		getWorldPosition(camera, stickHeadC);
+		stickHeadC.add(stickTmp.set(0, -0.025, 0.092).applyQuaternion(camQ));
+		bodyTopY = playerRig.position.y + camera.position.y + 0.17;
+		const prev = playerAvatar.position.clone();
+		playerAvatar.position.set(
+			stickHeadC.x + 0.09 * Math.sin(avatarYaw),
+			playerRig.position.y,
+			stickHeadC.z + 0.09 * Math.cos(avatarYaw),
+		);
+		if (dt > 1e-4) {
+			const d = playerAvatar.position.clone().sub(prev);
+			((d.y = 0), avatarVelocity.lerp(d.divideScalar(dt), 0.2));
+		}
+		const speed = avatarVelocity.length(),
+			moveAmt = Math.min(1, speed / 1.2);
+		walkPhase += speed * dt * 4.2;
+		const dir = speed > 0.05 ? avatarVelocity.clone().setY(0).normalize() : new Vector3(0, 0, 1);
 		{
-			const z = new Mesh(new TorusGeometry(0.126, 0.01, 8, 32), e);
-			((z.rotation.x = Math.PI / 2),
-				z.scale.set(1, 0.85, 1),
-				(z.position.y = 0.462),
-				(z.castShadow = !0),
-				kidAvatar.add(z));
-		}
-		for (const z of [-1, 1]) {
-			const R = kidAvatar.children.length,
-				T = 0.075 * z,
-				V = new CylinderGeometry(0.057, 0.046, 0.165, 14);
-			(V.translate(0, -0.0825, 0),
-				o(new Mesh(V, e)).position.set(T, 0.335, 0),
-				o(new Mesh(new SphereGeometry(0.058, 14, 10), e)).position.set(T, 0.335, 0),
-				o(new Mesh(new SphereGeometry(0.047, 14, 10), e)).position.set(T, 0.172, -0.004));
-			const J = new CylinderGeometry(0.044, 0.034, 0.14, 14);
-			(J.translate(0, -0.07, 0),
-				o(new Mesh(J, e)).position.set(T, 0.172, -0.004),
-				o(new Mesh(new SphereGeometry(0.036, 12, 8), e)).position.set(T, 0.04, -0.004));
-			{
-				const Le = new Mesh(new TorusGeometry(0.037, 0.0085, 8, 20), e);
-				((Le.rotation.x = Math.PI / 2),
-					Le.position.set(T, 0.05, -0.004),
-					(Le.castShadow = !0),
-					kidAvatar.add(Le));
-			}
-			const I = new Group();
-			(I.position.set(T, 0, -0.004), (I.rotation.y = 0.12 * z), kidAvatar.add(I));
-			const H = new Mesh(new BoxGeometry(0.082, 0.02, 0.2), i);
-			(H.position.set(0, 0.01, -0.03), (H.castShadow = !0), I.add(H));
-			const Se = new Mesh(new SphereGeometry(0.05, 14, 10), l);
-			(Se.scale.set(0.85, 0.62, 1.55),
-				Se.position.set(0, 0.034, -0.04),
-				(Se.castShadow = !0),
-				I.add(Se));
-			const ze = new Mesh(new SphereGeometry(0.04, 12, 8), l);
-			(ze.scale.set(1.05, 0.62, 1.05), ze.position.set(0, 0.03, -0.098), I.add(ze));
-			{
-				const Le = kidAvatar.children.slice(R),
-					ct = new Group();
-				(ct.position.set(T, 0.335, 0),
-					kidAvatar.add(ct),
-					Le.forEach((Ve) => ct.attach(Ve)),
-					(ct.userData.foot = I),
-					kidFeet.push(ct));
+			const f = camera.getWorldDirection(new Vector3());
+			if (Math.hypot(f.x, f.z) > 0.25) {
+				let dy = Math.atan2(-f.x, -f.z) - avatarYaw;
+				((dy = Math.atan2(Math.sin(dy), Math.cos(dy))), (avatarYaw += dy * Math.min(1, 8 * dt)));
 			}
 		}
+		const w = stickYawQuat.setFromAxisAngle(unitYAxis, avatarYaw),
+			head = stickHeadC.clone().sub(playerAvatar.position),
+			T = new Vector3(0, head.y - 0.2, 0),
+			k = clamp(T.y / 1.38, 0.6, 1.4),
+			pel = new Vector3(0, Math.max(0.3, T.y - 0.55 * k), 0),
+			stride = 0.3 * Math.sin(walkPhase) * moveAmt,
+			lift = 0.09 * moveAmt,
+			footL = new Vector3(-0.09, Math.max(0, Math.cos(walkPhase)) * lift, 0)
+				.applyQuaternion(w)
+				.addScaledVector(dir, stride),
+			footR = new Vector3(0.09, Math.max(0, -Math.cos(walkPhase)) * lift, 0)
+				.applyQuaternion(w)
+				.addScaledVector(dir, -stride),
+			shL = new Vector3(0, T.y - 0.02, 0),
+			shR = new Vector3(0, T.y - 0.02, 0),
+			armLen = 0.4 * k,
+			legLen = 0.46 * k;
+		// hand targets (controllers / tracked hands in XR, mouse reach on desktop)
+		const restL = new Vector3(-0.2, 0.74 * k, -0.03).applyQuaternion(w),
+			restR = new Vector3(0.2, 0.74 * k, -0.03).applyQuaternion(w);
+		if (presenting) {
+			const pl = ga.src
+					? (ga.hj ? ga.hj.p : getWorldPosition(controllers.left, new Vector3())).sub(playerAvatar.position)
+					: restL,
+				pr = gb.src
+					? (gb.hj ? gb.hj.p : getWorldPosition(controllers.right, new Vector3())).sub(playerAvatar.position)
+					: restR,
+				s = 1 - Math.exp(-28 * dt);
+			(leftHandRest.distanceToSquared(pl) > 0.36 ? leftHandRest.copy(pl) : leftHandRest.lerp(pl, s),
+				rightHandRest.distanceToSquared(pr) > 0.36 ? rightHandRest.copy(pr) : rightHandRest.lerp(pr, s));
+		} else {
+			const reaching = K1(shR);
+			leftHandRest.lerp(isWheelOpen ? getWheelRestPosition().sub(playerAvatar.position) : restL, 0.2);
+			rightHandRest.lerp(reaching ? reachTarget : restR, reaching ? 0.35 : 0.2);
+		}
+		const armL = solveTwoBoneIK(shL, leftHandRest, elbowHint(-1, w), armLen, armLen),
+			armR = solveTwoBoneIK(shR, rightHandRest, elbowHint(1, w), armLen, armLen),
+			kneeHint = new Vector3(0, 0.15, -1).applyQuaternion(w),
+			legL = solveTwoBoneIK(pel, footL.clone().setY(Math.max(footL.y, 0.03)), kneeHint, legLen, legLen),
+			legR = solveTwoBoneIK(pel, footR.clone().setY(Math.max(footR.y, 0.03)), kneeHint, legLen, legLen),
+			toe = new Vector3(0, 0, -0.12).applyQuaternion(w);
+		stretchCylinderBetween(P.torso, T, pel);
+		stretchCylinderBetween(P.neck, T, stickTmp.copy(head).add(new Vector3(0, -0.1, 0)));
+		stretchCylinderBetween(P.armUpL, shL, armL.el);
+		stretchCylinderBetween(P.armLoL, armL.el, armL.ha);
+		stretchCylinderBetween(P.armUpR, shR, armR.el);
+		stretchCylinderBetween(P.armLoR, armR.el, armR.ha);
+		stretchCylinderBetween(P.legUpL, pel, legL.el);
+		stretchCylinderBetween(P.legLoL, legL.el, legL.ha);
+		stretchCylinderBetween(P.legUpR, pel, legR.el);
+		stretchCylinderBetween(P.legLoR, legR.el, legR.ha);
+		stretchCylinderBetween(P.footL, legL.ha, stickTmp.copy(legL.ha).add(toe));
+		stretchCylinderBetween(P.footR, legR.ha, stickTmp.copy(legR.ha).add(toe));
+		P.handL.position.copy(armL.ha);
+		P.handR.position.copy(armR.ha);
+		P.pelvis.position.copy(pel);
+		P.shoulder.position.copy(shL);
+		P.head.position.copy(head);
+		P.head.quaternion.copy(camQ);
+		P.headShadow.position.copy(head);
+		ballAnchor.position.set(0, T.y - 0.2, 0).add(stickTmp.set(0, 0, -0.12).applyQuaternion(w));
+		// mouth: line at rest, "O" while you speak
+		analyseMicFrame(dt);
+		let jaw = micLipSync.jaw;
+		const xr = readXRFaceTracking(currentXRFrame);
+		xr && "jaw" in xr && (jaw = xr.jaw);
+		P.mouthOpen += (clamp(1.4 * jaw, 0, 1) - P.mouthOpen) * Math.min(1, 24 * dt);
+		// blink: random every 2-5s (~0.15s), or driven by XR face tracking when available
 		{
-			const z = new Mesh(new CylinderGeometry(0.043, 0.05, 0.11, 14), t);
-			(z.position.set(0, 0.9, 0), (z.castShadow = !0), kidAvatar.add(z));
-		}
-		((kidBody = new Group()), kidBody.position.set(0, 1.02, 0), kidAvatar.add(kidBody));
-		const b = new Mesh(new SphereGeometry(0.155, 24, 18), t);
-		(b.scale.set(0.92, 1.05, 0.95), (b.castShadow = !0), kidBody.add(b));
-		for (const z of [-1, 1]) {
-			const R = new Mesh(new SphereGeometry(0.021, 12, 10), n);
-			(R.position.set(0.055 * z, 0.02, -0.135),
-				R.scale.set(1, 1.25, 0.5),
-				(R.userData.b = R.position.clone()),
-				kidBody.add(R),
-				kidEyes.push(R));
-			const T = new Mesh(new SphereGeometry(0.035, 10, 8), t);
-			(T.scale.set(0.4, 1, 0.7), T.position.set(0.145 * z, 0, 0), kidBody.add(T));
-		}
-		const f = new MeshStandardMaterial({
-				color: 9385282,
-				roughness: 0.55,
-			}),
-			w = new MeshStandardMaterial({
-				color: 2758924,
-				roughness: 0.9,
-			}),
-			x = {};
-		for (const z of [-1, 1]) {
-			const R = z < 0 ? "L" : "R",
-				T = new Mesh(new BoxGeometry(0.046, 0.034, 0.003), t);
-			(T.position.set(0.055 * z, 0.036, -0.149),
-				(T.visible = !1),
-				kidBody.add(T),
-				(x["lid" + R] = T));
-			const V = new Mesh(new BoxGeometry(0.048, 0.009, 0.008), w);
-			(V.position.set(0.056 * z, 0.07, -0.142),
-				(V.rotation.z = 0.06 * -z),
-				(V.userData.rz = 0.06 * -z),
-				(V.userData.s = z),
-				kidBody.add(V),
-				(x["brow" + R] = V));
-			const J = new Mesh(
-				new SphereGeometry(0.02, 10, 8),
-				new MeshStandardMaterial({
-					color: 11037002,
-					roughness: 0.8,
-				}),
-			);
-			(J.scale.set(1.2, 0.7, 0.4),
-				J.position.set(0.085 * z, -0.032, -0.128),
-				kidBody.add(J),
-				(x["cheek" + R] = J));
-		}
-		const M = new Group();
-		(M.position.set(0, -0.052, -0.14), kidBody.add(M), (x.mouth = M));
-		const S = new Mesh(
-			new SphereGeometry(1, 14, 10),
-			new MeshStandardMaterial({
-				color: 3807772,
-				roughness: 0.8,
-			}),
-		);
-		((S.visible = !1), (S.position.z = 0.002), M.add(S), (x.inner = S));
-		const A = (z) => {
-				const R = new Group();
-				return (
-					R.add(new Mesh(new BoxGeometry(0.024, z, 0.008), f)),
-					(R.userData.sides = [-1, 1].map((T) => {
-						const V = new Mesh(new BoxGeometry(0.018, z, 0.008), f);
-						return ((V.position.x = 0.02 * T), R.add(V), V);
-					})),
-					R
-				);
-			},
-			P = A(0.008);
-		(M.add(P), (x.upLip = P));
-		const L = A(0.0095);
-		((L.position.y = -0.008), M.add(L), (x.loLip = L));
-		for (const z of ["L", "R"]) {
-			const R = new Mesh(new SphereGeometry(0.008, 8, 6), f);
-			(M.add(R), (x["corner" + z] = R));
-		}
-		l0 = x;
-		const O = (z) => {
-			const R = new Group();
-			(R.position.set(0.186 * z, 0.762, 0), kidAvatar.add(R));
-			const T = (N, re, Ce, Ae, je) => {
-				const j = new Mesh(N, re);
-				return ((j.castShadow = !0), j.position.set(Ce || 0, Ae || 0, je || 0), R.add(j), j);
-			};
-			r.push(T(new SphereGeometry(0.058, 20, 16), a));
-			const V = new CylinderGeometry(0.05, 0.037, 0.17, 14);
-			(V.translate(0, -0.085, 0), T(V, t));
-			{
-				const N = new CylinderGeometry(0.058, 0.051, 0.1, 20);
-				(N.translate(0, -0.05, 0), r.push(T(N, a)));
-				const re = T(new TorusGeometry(0.05, 0.008, 8, 18), a, 0, -0.1, 0);
-				((re.rotation.x = Math.PI / 2), r.push(re));
+			let bl;
+			if (xr && ("blinkL" in xr || "blinkR" in xr)) bl = Math.max(xr.blinkL || 0, xr.blinkR || 0);
+			else {
+				P.blinkIn -= dt;
+				if (P.blinkT < 0 && P.blinkIn <= 0) ((P.blinkT = 0), (P.blinkIn = 2 + Math.random() * 3));
+				if (P.blinkT >= 0) {
+					P.blinkT += dt;
+					bl = Math.sin(Math.min(1, P.blinkT / 0.16) * Math.PI);
+					P.blinkT >= 0.16 && (P.blinkT = -1);
+				} else bl = 0;
 			}
-			const J = new Group();
-			(J.position.set(0, -0.17, 0), R.add(J));
-			const I = (N, re, Ce, Ae, je) => {
-				const j = new Mesh(N, re);
-				return ((j.castShadow = !0), j.position.set(Ce || 0, Ae || 0, je || 0), J.add(j), j);
-			};
-			I(new SphereGeometry(0.037, 12, 10), t, 0, 0, 0);
-			const H = new CylinderGeometry(0.036, 0.03, 0.17, 14);
-			(H.translate(0, -0.085, 0), I(H, t, 0, 0, 0));
-			const Se = I(new SphereGeometry(0.036, 16, 12), t, 0, -0.205, 0);
-			(Se.scale.set(1.12, 1.05, 0.62),
-				I(new SphereGeometry(0.02, 10, 8), t, 0.02 * -z, -0.2, 0.012).scale.set(1, 1.3, 0.8),
-				I(new SphereGeometry(0.033, 12, 10), t, 0, -0.172, 0).scale.set(1, 0.7, 0.9));
-			const ze = (N, re, Ce, Ae) => {
-					const je = new THREE.CapsuleGeometry(re, Ce, 4, 8);
-					je.translate(0, -(Ce / 2 + re), 0);
-					const j = new Mesh(je, t);
-					return ((j.castShadow = !0), N.add(j), j);
-				},
-				Le = new Group();
-			((Le.scale.z = -1), J.add(Le));
-			const ct = -z,
-				Ve = [0.018, 0.02, 0.018, 0.014],
-				et = [0.013, 0.015, 0.014, 0.011],
-				ln = [0.0185, 0.0065, -0.0062, -0.0175],
-				Dn = [-0.226, -0.23, -0.227, -0.219],
-				Cn = [];
-			for (let N = 0; N < 4; N++) {
-				const re = 0.0082 - 4e-4 * Math.abs(N - 1.5),
-					Ce = Math.abs(N - 1.5),
-					Ae = new Group();
-				(Ae.position.set(ct * ln[N], Dn[N], -0.004 - 0.0022 * Ce), Le.add(Ae), ze(Ae, re, Ve[N]));
-				const je = new Group();
-				((je.position.y = -(Ve[N] + 2 * re * 0.92)),
-					Ae.add(je),
-					ze(je, re * 0.88, et[N]),
-					(Ae.rotation.x = 0.14 + 0.075 * N),
-					(Ae.rotation.z = ct * (1.5 - N) * 0.06),
-					(Ae.rotation.y = ct * (1.5 - N) * -0.02),
-					(Ae.userData.baseX = Ae.rotation.x),
-					(je.userData.baseX = 0.2 + 0.03 * N),
-					(je.rotation.x = je.userData.baseX),
-					(Ae.userData.dist = je),
-					Cn.push(Ae));
-			}
-			const mt = new Group();
-			(mt.position.set(0.028 * -z, -0.2, -0.012),
-				mt.rotation.set(0.25, 0.35 * z, 0.6 * -z),
-				(mt.userData.baseX = 0.25),
-				Le.add(mt),
-				ze(mt, 0.0098, 0.013));
-			const Rt = new Group();
-			return (
-				(Rt.position.y = -0.031),
-				mt.add(Rt),
-				ze(Rt, 0.0086, 0.011),
-				(Rt.userData.baseX = 0.15),
-				(Rt.rotation.x = 0.15),
-				(mt.userData.dist = Rt),
-				(R.userData.hand = Se),
-				(R.userData.elbow = J),
-				(R.userData.fingers = Cn),
-				(R.userData.thumb = mt),
-				R
-			);
-		};
-		((kidLeftArm = O(-1)),
-			(kidRightArm = O(1)),
-			(kidLeftArm.rotation.z = -0.14),
-			(kidRightArm.rotation.z = 0.14));
-		{
-			const z = new Color(14723388);
-			kidAvatar.updateMatrixWorld(!0);
-			const R = kidAvatar.matrixWorld.clone().invert(),
-				T = new Vector3();
-			for (const V of r) {
-				V.updateWorldMatrix(!0, !1);
-				const J = V.geometry.attributes.position,
-					I = new Float32Array(3 * J.count);
-				for (let H = 0; H < J.count; H++) {
-					T.fromBufferAttribute(J, H).applyMatrix4(V.matrixWorld).applyMatrix4(R);
-					const Se = Math.atan2(T.x, T.z),
-						ze =
-							0.93 +
-							0.07 * (0.5 + 0.5 * Math.sin(5 * Se + 11 * T.y) * Math.sin(3 * Se - 6 * T.y)) -
-							0.03 * Math.min(1, Math.max(0, (0.7 - T.y) / 0.25)) +
-							0.012 * Math.sin(70 * T.x + 55 * T.y);
-					((I[3 * H] = z.r * ze), (I[3 * H + 1] = z.g * ze), (I[3 * H + 2] = z.b * ze));
-				}
-				V.geometry.setAttribute("color", new BufferAttribute(I, 3));
-			}
+			P.blink += (bl - P.blink) * Math.min(1, 40 * dt);
+			const b = clamp(P.blink, 0, 1);
+			// the face follows the emotion of the emoji in the message you sent (neutral otherwise)
+			updateFaceRig(P.face, dt, t, P.mouthOpen, b, faceCurrentMood());
 		}
-	}
-	const kidWheel = new Group();
-	((kidWheel.visible = !1), kidWheel.scale.setScalar(0.001), scene.add(kidWheel));
-	const kidGoldenBall = new Mesh(
-		new SphereGeometry(0.05, 32, 20),
-		new THREE.MeshMatcapMaterial({
-			matcap: goldMatcap,
-		}),
-	);
-	let kidWheelEmojis = [],
-		kidWheelFooter = new Group(),
-		kidBallWobble = new Vector2();
-	{
-		const e = new Mesh(
-			new CircleGeometry(0.38, 48),
-			new MeshStandardMaterial({
-				color: 1316380,
-				transparent: !0,
-				opacity: 0.72,
-				roughness: 0.4,
-				depthWrite: !1,
-				side: DoubleSide,
-			}),
-		);
-		kidWheel.add(e);
-		const t = new Mesh(
-			new TorusGeometry(0.38, 0.007, 8, 64),
-			new MeshBasicMaterial({
-				color: 13414999,
-				transparent: !0,
-			}),
-		);
-		kidWheel.add(t);
-		for (const [n, o, a] of [
-			[0.026, 0.05, -0.002],
-			[0.05, 0.016, -0.003],
-		]) {
-			const r = new Mesh(
-				new TorusGeometry(0.38, n, 10, 64),
-				new MeshBasicMaterial({
-					color: a == -0.002 ? 16762938 : 16756768,
-					transparent: !0,
-					opacity: o,
-					blending: AdditiveBlending,
-					depthWrite: !1,
-				}),
-			);
-			((r.position.z = a), kidWheel.add(r));
-		}
-		((kidGoldenBall.position.z = -0.05),
-			(kidGoldenBall.userData.baseSc = 1),
-			kidWheel.add(kidGoldenBall),
-			kidWheelFooter.position.set(0, -0.46, 0.015),
-			kidWheel.add(kidWheelFooter));
-	}
-	const kidWheelTrailLines = [
-		makeTrailLine(16777215, 0.4),
-		makeTrailLine(16765773, 0.3),
-		makeTrailLine(16751872, 0.2),
-	];
-	kidWheelTrailLines.forEach((e) => kidWheel.add(e));
-	const Sa = new Group();
-	((Sa.position.z = -0.03), (Sa.visible = !1));
-	{
-		const e = new Mesh(
-				new SphereGeometry(0.011, 16, 12),
-				new MeshBasicMaterial({
-					color: 16777215,
-					depthWrite: !1,
-				}),
-			),
-			t = new Mesh(
-				new SphereGeometry(0.024, 16, 12),
-				new MeshBasicMaterial({
-					color: 16777215,
-					transparent: !0,
-					opacity: 0.28,
-					blending: AdditiveBlending,
-					depthWrite: !1,
-				}),
-			);
-		Sa.add(e, t);
-	}
-	kidWheel.add(Sa);
-	let cl = 0;
-	function updateKidStickMarker(e, t, n, o) {
-		const a = Math.hypot(n, o),
-			r = a > 0.02;
-		((Sa.visible = r),
-			Sa.scale.setScalar(Math.min(1, a / 0.08) * (1 + 0.12 * Math.sin(22 * t))),
-			(cl -= e),
-			cl > 0 ||
-				((cl = 0.07),
-				kidWheelTrailLines.forEach((s, l) => {
-					if (((s.visible = r), !r)) return;
-					const i = s.geometry.attributes.position,
-						c = -o / a,
-						d = n / a;
-					for (let h = 0; h <= trailSegments; h++) {
-						const u = h / trailSegments,
-							b =
-								h === 0 || h === trailSegments
-									? 0
-									: 2 * (Math.random() - 0.5) * trailJitter[l] * Math.min(1, a / 0.2);
-						i.setXYZ(h, n * u + c * b, o * u + d * b, -0.026);
-					}
-					i.needsUpdate = !0;
-				})));
-	}
-	function buildKidWheelPage(e) {
-		for (const o of kidWheelEmojis) kidWheel.remove(o);
-		kidWheelEmojis = [];
-		const t = wheelPages[((e % wheelPages.length) + wheelPages.length) % wheelPages.length],
-			n = t.emojis.length;
-		kidWheel.userData.sp &&
-			(kidWheel.remove(kidWheel.userData.sp), kidWheel.userData.sp.geometry.dispose());
-		{
-			const o = [];
-			for (let s = 0; s < n; s++) {
-				const l = Math.PI / 2 - (s / n) * Math.PI * 2 - Math.PI / n;
-				o.push(
-					0.348 * Math.cos(l),
-					0.348 * Math.sin(l),
-					0.008,
-					0.378 * Math.cos(l),
-					0.378 * Math.sin(l),
-					0.008,
-				);
-			}
-			const a = new BufferGeometry();
-			a.setAttribute("position", new THREE.Float32BufferAttribute(o, 3));
-			const r = new THREE.LineSegments(
-				a,
-				new LineBasicMaterial({
-					color: 16765773,
-					transparent: !0,
-					opacity: 0.9,
-				}),
-			);
-			(kidWheel.add(r), (kidWheel.userData.sp = r));
-		}
-		t.emojis.forEach((o, a) => {
-			const r = Math.PI / 2 - (a / n) * Math.PI * 2,
-				s = createEmojiQuad(o, 0.058);
-			(s.position.set(Math.cos(r) * emojiRingRadius, Math.sin(r) * emojiRingRadius, 0.012),
-				(s.userData.home = s.position.clone()),
-				(s.userData.emoji = o),
-				kidWheel.add(s),
-				kidWheelEmojis.push(s));
-		});
-	}
-	function showKidWheelEmojis(e) {
-		for (; kidWheelFooter.children.length;) kidWheelFooter.remove(kidWheelFooter.children[0]);
-		e.forEach((t, n) => {
-			const o = createEmojiQuad(t, 0.05);
-			(o.position.set(0.058 * (n - (e.length - 1) / 2), 0, 0), kidWheelFooter.add(o));
-		});
-	}
-	function findWheelPageForEmoji(e) {
-		const t = stripVariationSelector(e);
-		let n = wheelPages.findIndex((o) => o.emojis.some((a) => stripVariationSelector(a) === t));
-		return n < 0 ? 0 : n;
-	}
-	function moodFromEmoji(e) {
-		const t = String(e).replace(/️/g, "");
-		return happyEmojis.some((n) => t.startsWith(n))
-			? "smile"
-			: sadEmojis.some((n) => t.startsWith(n))
-				? "sad"
-				: angryEmojis.some((n) => t.startsWith(n))
-					? "angry"
-					: surprisedEmojis.some((n) => t.startsWith(n))
-						? "surp"
-						: null;
-	}
-	function setKidFaceExpression(e, t) {
-		for (const n of ["jaw", "smile", "frown", "pucker", "brow", "browIn", "angry", "lids"])
-			kidFaceOverride[n] = e[n] || 0;
-		((kidFaceOverride.dur = t || 2400),
-			(kidFaceOverride.until = performance.now() + kidFaceOverride.dur));
-	}
-	function setKidFaceFromEmoji(e, t) {
-		if (Array.isArray(e)) {
-			const a = {
-				smile: 0,
-				sad: 0,
-				angry: 0,
-				surp: 0,
-			};
-			for (const s of e) {
-				const l = moodFromEmoji(s);
-				l && a[l]++;
-			}
-			const r = Object.entries(a).sort((s, l) => l[1] - s[1])[0];
-			return r && r[1]
-				? void setKidFaceExpression(
-						r[0] === "smile"
-							? {
-									smile: 1,
-									brow: 0.3,
-								}
-							: r[0] === "sad"
-								? {
-										frown: 1,
-										brow: 0.2,
-										browIn: 0.8,
-									}
-								: r[0] === "angry"
-									? {
-											angry: 1,
-											frown: 0.5,
-										}
-									: {
-											jaw: 0.7,
-											brow: 1,
-										},
-						t || 3e3,
-					)
-				: void (
-						e.length &&
-						setKidFaceExpression(
-							{
-								smile: 0.6,
-								brow: 0.25,
-								jaw: 0.2,
-							},
-							t || 2400,
-						)
-					);
-		}
-		const n = String(e),
-			o = moodFromEmoji(n);
-		o === "smile"
-			? setKidFaceExpression(
-					{
-						smile: 1,
-						brow: 0.3,
-					},
-					t,
-				)
-			: o === "sad"
-				? setKidFaceExpression(
-						{
-							frown: 1,
-							brow: 0.2,
-							browIn: 0.8,
-						},
-						t,
-					)
-				: o === "angry"
-					? setKidFaceExpression(
-							{
-								angry: 1,
-								frown: 0.5,
-							},
-							t,
-						)
-					: o === "surp"
-						? setKidFaceExpression(
-								{
-									jaw: 0.75,
-									brow: 1,
-								},
-								t,
-							)
-						: /😴|🥱|💤/.test(n)
-							? setKidFaceExpression(
-									{
-										jaw: 0.65,
-										lids: 0.7,
-										smile: 0.1,
-									},
-									t,
-								)
-							: /🤔|🧐|🤨/.test(n)
-								? setKidFaceExpression(
-										{
-											browIn: 0.9,
-											brow: 0.4,
-											frown: 0.35,
-										},
-										t,
-									)
-								: /😋|🤤|🍕|🍔|🍦|🎂|🍎|🍓|🍩|🍪/.test(n)
-									? setKidFaceExpression(
-											{
-												smile: 0.9,
-												jaw: 0.35,
-												brow: 0.2,
-											},
-											t,
-										)
-									: /🚫|🙅|❌|👎/.test(n)
-										? setKidFaceExpression(
-												{
-													frown: 0.7,
-													angry: 0.4,
-													browIn: 0.3,
-												},
-												t,
-											)
-										: /❤|💙|💖|💗|🫂|👋|🙏|👍|👏|🙌|✨|🎉|⭐|🌟|🔥|⚽|🎮|🎲|🧩|🏃|🎁|🌈|🦋|🐶|🐱|🚀/.test(
-													n,
-											  )
-											? setKidFaceExpression(
-													{
-														smile: 0.85,
-														jaw: 0.3,
-														brow: 0.25,
-													},
-													t,
-												)
-											: setKidFaceExpression(
-													{
-														smile: 0.35,
-														brow: 0.5,
-														jaw: 0.22,
-													},
-													t,
-												);
-	}
-	let kidGazeOffset = {
-		x: 0,
-		y: 0,
-	};
-	function updateKidFace(e, t) {
-		const n = l0;
-		if (!n) return;
-		const o = performance.now(),
-			a = {
-				jaw: 0,
-				smile: 0.14 + 0.06 * Math.sin(1.3 * t),
-				frown: 0,
-				pucker: 0,
-				brow: 0.08,
-				browIn: 0,
-				angry: 0,
-				lids: 0,
-			},
-			r =
-				o < kidFaceOverride.until
-					? Math.min(
-							1,
-							(kidFaceOverride.until - o) / 600,
-							(kidFaceOverride.dur - (kidFaceOverride.until - o)) / 150 + 0.2,
-						)
-					: 0;
-		if (r > 0)
-			for (const M of ["jaw", "smile", "frown", "pucker", "brow", "browIn", "angry", "lids"])
-				a[M] = Math.max(a[M], kidFaceOverride[M] * r);
-		(kidWheelAnim.mode === "thinking" &&
-			((a.browIn = Math.max(a.browIn, 0.65)),
-			(a.brow = Math.max(a.brow, 0.35)),
-			(a.smile = 0),
-			(a.jaw = Math.max(a.jaw, 0.12))),
-			kidWheelAnim.mode === "wave" &&
-				((a.smile = Math.max(a.smile, 0.85)), (a.jaw = Math.max(a.jaw, 0.25))),
-			(kidWheelAnim.blinkT -= e),
-			kidWheelAnim.blinkT <= 0 &&
-				((kidWheelAnim.blink = 0.14),
-				(kidWheelAnim.blinkT = 1.8 + 3.8 * Math.random()),
-				Math.random() < 0.16 && (kidWheelAnim.blinkT = 0.28)));
-		let s = 0;
-		if (kidWheelAnim.blink > 0) {
-			kidWheelAnim.blink -= e;
-			const M = 1 - Math.max(0, kidWheelAnim.blink) / 0.14;
-			s = M < 0.4 ? M / 0.4 : (1 - M) / 0.6;
-		}
-		a.blinkL = a.blinkR = clamp(Math.max(s, 0.75 * a.lids), 0, 1);
-		for (const M in kidFace) kidFace[M] += ((a[M] || 0) - kidFace[M]) * Math.min(1, 16 * e);
-		const l = clamp(Math.max(s, 0.75 * kidFace.lids), 0, 1),
-			i = 0.056 * (1 + 0.45 * kidFace.smile - 0.4 * kidFace.pucker),
-			c = kidFace.jaw,
-			d = 0.003 * c + 0.0015 * kidFace.smile,
-			h = -0.008 - 0.03 * c + 0.0012 * kidFace.smile;
-		((n.upLip.position.y = d),
-			(n.loLip.position.y = h),
-			n.upLip.scale.set(i / 0.056, 1 + 0.8 * kidFace.pucker, 1),
-			n.loLip.scale.set(i / 0.056, 1 + 0.8 * kidFace.pucker, 1));
-		const u = 0.01 * kidFace.smile - frownBrowOffset(kidFace);
-		for (const M of [n.upLip, n.loLip])
-			M.userData.sides.forEach((S, A) => {
-				const P = A ? 1 : -1;
-				((S.position.y = 0.5 * u), (S.rotation.z = P * Math.atan2(u, 0.02) * 0.95));
-			});
-		n.mouth.position.y = -0.052 - 0.002 * kidFace.frown;
-		const b = Math.max(6e-4, d - h - 0.008);
-		((n.inner.visible = c > 0.04),
-			(n.inner.position.y = (d + h) / 2),
-			n.inner.scale.set(0.46 * i, b / 2, 0.003));
-		const f = (d + h) / 2 + u;
-		(n.cornerL.position.set(-i / 2, f, 0), n.cornerR.position.set(i / 2, f, 0));
-		for (const M of ["L", "R"]) {
-			const S = n["brow" + M],
-				A = S.userData.s;
-			((S.position.y = 0.07 + 0.01 * kidFace.brow + 0.006 * kidFace.browIn - 0.009 * kidFace.angry),
-				(S.rotation.z = S.userData.rz + A * kidFace.angry * 0.42 - A * kidFace.browIn * 0.3));
-			const P = clamp(l + 0.05 * kidFace.smile + 0.3 * kidFace.angry, 0, 1),
-				L = n["lid" + M];
-			((L.visible = P > 0.04),
-				(L.scale.y = Math.max(0.01, P)),
-				(L.position.y = 0.036 - 0.02 * P),
-				n["cheek" + M].scale.set(1.2 + 0.35 * kidFace.smile, 0.7 + 0.3 * kidFace.smile, 0.4));
-		}
-		let w = 0.25 * Math.sin(0.7 * t),
-			x = 0.12 * Math.sin(1.1 * t);
-		(kidWheelAnim.mode === "wheel" && kidWheelAnim.target && kidWheelAnim.target.userData.home
-			? ((w = clamp(kidWheelAnim.target.userData.home.x / emojiRingRadius, -1, 1)),
-				(x = clamp(kidWheelAnim.target.userData.home.y / emojiRingRadius, -1, 1)))
-			: kidWheelAnim.mode === "thinking" && ((w = 0.25), (x = 0.55)),
-			(kidGazeOffset.x += (w - kidGazeOffset.x) * Math.min(1, 10 * e)),
-			(kidGazeOffset.y += (x - kidGazeOffset.y) * Math.min(1, 10 * e)),
-			kidEyes.forEach((M) => {
-				(M.position.set(
-					M.userData.b.x + 0.009 * kidGazeOffset.x,
-					M.userData.b.y + 0.007 * kidGazeOffset.y,
-					M.userData.b.z,
-				),
-					(M.scale.y = 1.25 * (1 - 0.88 * l)));
-			}));
-	}
-	function frownBrowOffset(e) {
-		return 0.008 * e.frown;
-	}
-	const randomBetween = (e, t) => e + Math.random() * (t - e);
-	function randomPickTiming() {
-		const e = Math.random();
-		return {
-			dragDur:
-				e < 0.22
-					? randomBetween(0.26, 0.38)
-					: e < 0.5
-						? randomBetween(0.62, 0.95)
-						: randomBetween(0.38, 0.62),
-			holdDur: randomBetween(0.18, 0.55),
-			returnDur: randomBetween(0.2, 0.5),
-			pauseDur: Math.random() < 0.12 ? randomBetween(0.5, 0.85) : randomBetween(0.05, 0.38),
-			scanDur: randomBetween(0.22, 0.5),
-			ease: (3 * Math.random()) | 0,
-			wobble: randomBetween(-0.018, 0.018),
-		};
-	}
-	function easeByType(e, t) {
-		return t === 1
-			? 1 - Math.pow(1 - e, 3)
-			: t === 2
-				? 1 + (1.35 + 1) * Math.pow(e - 1, 3) + 1.35 * Math.pow(e - 1, 2)
-				: e * e * (3 - 2 * e);
-	}
-	function animateKidArm(e, t) {
-		const n = Math.min(1, 8 * t);
-		for (const o of [kidLeftArm, kidRightArm]) {
-			const a = o && o.userData.elbow;
-			if (!a) continue;
-			const r = o === kidRightArm;
-			if (r && kidWheelAnim.mode === "wheel") continue;
-			a.rotation.order = "YXZ";
-			let s = 0.2 + 0.7 * Math.max(0, o.rotation.x) + 0.05 * Math.sin(1.8 * e + (r ? 1 : 0)),
-				l = 0,
-				i = 0;
-			if (r && kidWheelAnim.mode === "wave") {
-				const c = (performance.now() - kidWheelAnim.t0) / 1e3,
-					d = (u) => (u = Math.max(0, Math.min(1, u))) * u * (3 - 2 * u),
-					h = d(c / 0.55) * (1 - d((c - 1.7) / 0.7));
-				((s = 0.25 + 1.3 * h), (i = -1.5 * h + 0.42 * Math.sin(10 * c) * h));
-			} else r && kidWheelAnim.mode === "thinking" && (s = 1.5);
-			a.rotation.set(
-				a.rotation.x + (s - a.rotation.x) * n,
-				a.rotation.y + (i - a.rotation.y) * n,
-				a.rotation.z + (l - a.rotation.z) * n,
-			);
-		}
-	}
-	function animateKidFingers(e, t) {
-		const n = performance.now() / 1e3;
-		for (const o of [kidLeftArm, kidRightArm]) {
-			if (!o || !o.userData.fingers) continue;
-			const a = o === kidLeftArm,
-				r = (o.userData.fx ||= {
-					next: n + 1 + 4 * Math.random(),
-					t0: 0,
-					dur: 0,
-					amp: 0,
-				});
-			n > r.next &&
-				n > r.t0 + r.dur &&
-				((r.t0 = n),
-				(r.dur = 0.9 + 0.9 * Math.random()),
-				(r.amp = 0.4 + 0.6 * Math.random()),
-				(r.next = n + r.dur + 3 + 6 * Math.random()));
-			const s = kidWheelAnim.mode !== "wheel" || a;
-			o.userData.fingers.forEach((i, c) => {
-				if (
-					(a && (i.rotation.x = i.userData.baseX + 0.07 + 0.03 * Math.sin(1.5 * e + 1.3 * c)), s)
-				) {
-					const h = Math.max(0, Math.min(1, (n - r.t0 - 0.07 * c) / r.dur)),
-						u = Math.pow(Math.sin(Math.PI * h), 2);
-					i.rotation.x += r.amp * u * (0.85 + 0.1 * c);
-				}
-				const d = i.rotation.x - i.userData.baseX;
-				i.userData.dist.rotation.x = i.userData.dist.userData.baseX + (1.15 + 0.08 * c) * d;
-			});
-			const l = o.userData.thumb;
-			if (l) {
-				if ((a && (l.rotation.x = l.userData.baseX + 0.05), s)) {
-					const i = Math.max(0, Math.min(1, (n - r.t0 - 0.05) / r.dur));
-					l.rotation.x += 0.35 * r.amp * Math.pow(Math.sin(Math.PI * i), 2);
-				}
-				l.userData.dist.rotation.x =
-					l.userData.dist.userData.baseX + 0.9 * (l.rotation.x - l.userData.baseX);
-			}
-		}
-	}
-	const shoulderPos = new Vector3(),
-		armTargetLocal = new Vector3(),
-		armDirection = new Vector3(),
-		armBendDir = new Vector3(),
-		elbowPos = new Vector3(),
-		upperArmDir = new Vector3(),
-		foreArmDir = new Vector3(),
-		upperArmQuat = new Quaternion(),
-		foreArmQuat = new Quaternion(),
-		foreArmLocalQuat = new Quaternion(),
-		rd = (new Quaternion(), new Vector2());
-	function updateKidBallDrag() {
-		const e = kidWheelAnim.target;
-		if (!e) return;
-		const t = e.userData.home.x,
-			n = e.userData.home.y,
-			o = (kidWheelAnim.from.x + t) / 2,
-			a = (kidWheelAnim.from.y + n) / 2;
-		let r = t - kidWheelAnim.from.x,
-			s = n - kidWheelAnim.from.y;
-		const l = Math.hypot(r, s) || 1;
-		((r /= l), (s /= l));
-		const i = randomBetween(-0.115, 0.115),
-			c = randomBetween(0.01, 0.075);
-		(kidWheelAnim.ctrl.set(o + -s * i - r * 0.02, a + r * i + c),
-			(kidWheelAnim.ph1 = Math.random() * 6.283),
-			(kidWheelAnim.ph2 = Math.random() * 6.283),
-			(kidWheelAnim.ph3 = Math.random() * 6.283));
-	}
-	function startKidBallReturn() {
-		const e = kidWheelAnim.from.x / 2,
-			t = kidWheelAnim.from.y / 2;
-		let n = -kidWheelAnim.from.x,
-			o = -kidWheelAnim.from.y;
-		const a = Math.hypot(n, o) || 1;
-		((n /= a), (o /= a));
-		const r = randomBetween(-0.09, 0.09);
-		(kidWheelAnim.rCtrl.set(e + -o * r, t + n * r + randomBetween(0, 0.045)),
-			(kidWheelAnim.ph1 = Math.random() * 6.283),
-			(kidWheelAnim.ph2 = Math.random() * 6.283));
-	}
-	function quadraticBezier(e, t, n, o, a, r) {
-		const s = 1 - r;
-		e.set(s * s * t.x + 2 * s * r * n.x + r * r * o, s * s * t.y + 2 * s * r * n.y + r * r * a);
-	}
-	const kidNearDistance = 12;
-	function checkKidNearPlayer() {
-		const e = getWorldPosition(camera, new Vector3()),
-			t = Math.hypot(e.x - kidAvatar.position.x, e.z - kidAvatar.position.z);
-		if ((camera.getWorldDirection(flatForward), (flatForward.y = 0), flatForward.lengthSq() < 0.01))
-			return {
-				near: t < kidNearDistance,
-				facing: !1,
-				dist: t,
-			};
-		flatForward.normalize();
-		const n = kidAvatar.position.x - e.x,
-			o = kidAvatar.position.z - e.z,
-			a = Math.hypot(n, o) || 1;
-		return {
-			near: t < kidNearDistance,
-			facing: (flatForward.x * n + flatForward.z * o) / a > 0.55,
-			dist: t,
-		};
-	}
-	function captureKidPointOfView() {
-		try {
-			(rl.getWorldPosition(snapshotCamera.position), (snapshotCamera.position.y += 0.03));
-			const e = getWorldPosition(camera, new Vector3());
-			(snapshotCamera.lookAt(e.x, e.y - 0.05, e.z), snapshotCamera.updateMatrixWorld(!0));
-			const t = [
-					kidAvatar,
-					kidWheel,
-					emojiWheel,
-					toolbar,
-					statusPanel,
-					sparkFairy,
-					sparkAnswerGroup,
-					sparkOrb,
-				],
-				n = t.map((i) => i.visible);
-			t.forEach((i) => (i.visible = !1));
-			const o = renderer.getRenderTarget(),
-				a = renderer.xr.enabled;
-			renderer.xr.enabled = !1;
-			try {
-				(renderer.setRenderTarget(snapshotTarget),
-					renderer.render(scene, snapshotCamera),
-					renderer.readRenderTargetPixels(
-						snapshotTarget,
-						0,
-						0,
-						snapshotWidth,
-						snapshotHeight,
-						snapshotPixels,
-					));
-			} finally {
-				(renderer.setRenderTarget(o),
-					(renderer.xr.enabled = a),
-					t.forEach((i, c) => (i.visible = n[c])));
-			}
-			const r = snapshotCanvas.getContext("2d"),
-				s = r.createImageData(snapshotWidth, snapshotHeight),
-				l = 4 * snapshotWidth;
-			for (let i = 0; i < snapshotHeight; i++)
-				s.data.set(
-					snapshotPixels.subarray((snapshotHeight - 1 - i) * l, (snapshotHeight - i) * l),
-					i * l,
-				);
-			return (r.putImageData(s, 0, 0), snapshotCanvas.toDataURL("image/jpeg", 0.72));
-		} catch (e) {
-			return (console.warn("[child shot]", e), null);
-		}
-	}
-	const KID_PROMPT = `You are a kid in virtual reality. Another person in the room just sent you an emoji message.\n\nRespond directly to what they communicated from the perspective of a child. Do not introduce unprompted topics or suggest unrelated activities—simply react to and answer their message naturally and honestly as a kid would.\n\nOutput exactly ONE line starting with "ANSWER:" followed by your emoji response (12 or fewer symbols). Refuse inappropriate or hateful messages with ANSWER: 🚫. Output only that line and nothing else.`;
-	function sanitizeEmojiList(e) {
-		return Array.isArray(e) && e.length ? [...e].slice(0, MAX_EMOJI_PER_MESSAGE) : ["👋"];
-	}
-	const chatHistory = [];
-	async function requestKidReply(e, t) {
-		let n = "";
-		const o = e.join(" ");
-		const hasApi = Boolean(settings.key || settings.proxyUrl || settings.sparkUrl !== LEGACY_SPARK_URL);
-		if (hasApi)
-			try {
-				const a =
-						KID_PROMPT +
-						(chatHistory.length
-							? `
-
-Earlier in this chat (oldest first, them → you): ` +
-								chatHistory.map((i) => i[0] + " → " + i[1]).join(" | ")
-							: "") +
-						`
-
-Their emoji message to you: ` +
-						e.join(" "),
-					r = (i) =>
-						fetch(settings.sparkUrl, {
-							signal: AbortSignal.timeout(1e4),
-							method: "POST",
-							headers: {
-								"Content-Type": "application/json",
-								...(settings.key ? { Authorization: "Bearer " + settings.key } : {}),
-							},
-							body: JSON.stringify({
-								model: settings.model,
-								temperature: 0.9,
-								reasoning_effort: "minimal",
-								max_completion_tokens: 3e3,
-								messages: [
-									{
-										role: "user",
-										content: i
-											? [
-													{
-														type: "text",
-														text: a,
-													},
-													{
-														type: "image_url",
-														image_url: {
-															url: i,
-														},
-													},
-												]
-											: a,
-									},
-								],
-							}),
-						});
-				let s = await r(t);
-				!s.ok && t && (s = await r(null));
-				const l = await s.text();
-				if (s.ok) {
-					let i = null;
-					try {
-						i = JSON.parse(l);
-					} catch {}
-					const c = i ? extractChatText(i) : l,
-						d = c.match(/ANSWER:\s*([\s\S]*)$/i),
-						h = splitGraphemes(d ? d[1] : c);
-					if (h.length)
-						return (
-							chatHistory.push([o, h.join(" ")]) > 3 && chatHistory.shift(),
-							{
-								seq: h,
-								via: "spark",
-								why: "",
-							}
-						);
-					n = "Spark replied with no emojis";
-				} else n = "HTTP " + s.status + " from Spark";
-			} catch (a) {
-				n = "could not reach Spark (" + a.message + ")";
-			}
-		else n = "no Meta API key set";
-		return (
-			console.warn("[Muse Spark child] fallback:", n),
-			{
-				seq: sanitizeEmojiList(e),
-				via: "local",
-				why: n,
-			}
-		);
-	}
-	const As = {
-		left: [],
-		right: [],
-	};
-	function updateKidHandPoints(e, t) {
-		if (!t) return ((As.left.length = As.right.length = 0), !1);
-		if (!renderer.xr.isPresenting) return !!keysDown.KeyG;
-		const n = getWorldPosition(camera, new Vector3());
-		(camera.getWorldDirection(flatForward), (flatForward.y = 0), flatForward.normalize());
-		const o = new Vector3(-flatForward.z, 0, flatForward.x);
-		let a = !1;
-		for (const r of ["left", "right"]) {
-			const s = As[r],
-				l = controllers[r];
-			if (!l) {
-				s.length = 0;
-				continue;
-			}
-			const i = getWorldPosition(l, new Vector3());
-			if (i.y < n.y - 0.3) {
-				s.length = 0;
-				continue;
-			}
-			for (
-				s.push({
-					t: e,
-					x: i.clone().sub(n).dot(o),
-				});
-				s.length && e - s[0].t > 1400;
-			)
-				s.shift();
-			if (s.length < 6) continue;
-			let c = 0,
-				d = 0,
-				h = s[0].x,
-				u = 0;
-			for (let b = 1; b < s.length; b++) {
-				const f = s[b].x - h;
-				d
-					? Math.sign(f) === d
-						? (h = s[b].x)
-						: Math.abs(f) > 0.04 && (c++, (u = Math.max(u, Math.abs(f))), (d = -d), (h = s[b].x))
-					: Math.abs(f) > 0.04 && ((d = Math.sign(f)), (h = s[b].x));
-			}
-			c >= 2 && (a = !0);
-		}
-		return a;
-	}
-	const kidWheelAnim = {
-			mode: "idle",
-			t0: 0,
-			seq: [],
-			picked: [],
-			idx: 0,
-			phase: "",
-			phaseT: 0,
-			from: new Vector2(),
-			target: null,
-			tab: -1,
-			wavedAt: 0,
-			blinkT: 1.5,
-			blink: 0,
-			greeted: !1,
-			timing: randomPickTiming(),
-			openDur: 0.45,
-			closeDur: 0.4,
-			prevPeg: null,
-			ctrl: new Vector2(),
-			rCtrl: new Vector2(),
-			ph1: 0,
-			ph2: 0,
-			ph3: 0,
-			curl: 0,
-			press: 0,
-		},
-		Yn = new Group();
-	((Yn.visible = !1), scene.add(Yn));
-	for (let e = 0; e < 3; e++) {
-		const t = new Mesh(
-			new SphereGeometry(0.022, 12, 10),
-			new MeshBasicMaterial({
-				color: 8308991,
-			}),
-		);
-		((t.position.x = 0.07 * (e - 1)), Yn.add(t));
-	}
-	let kidSpeechBusy = !1,
-		kidCooldownUntil = 0;
-	async function startKidReply(e) {
-		if (!e || !e.length || kidSpeechBusy || performance.now() < kidCooldownUntil) return;
-		const t = checkKidNearPlayer();
-		if (!t.near) return;
-		if (!t.facing)
-			return void setStatus(
-				"🧒 The kid avatar is on the platform — face it and send your emoji again so it can see them.",
-			);
-		let n;
-		((kidSpeechBusy = !0),
-			(kidWheelAnim.mode = "thinking"),
-			(kidWheelAnim.t0 = performance.now()),
-			(Yn.visible = !0),
-			setStatus("🧒 Kid saw: " + e.join(" ") + " — thinking…"));
-		try {
-			const o = captureKidPointOfView();
-			n = await requestKidReply(e, o);
-		} catch (o) {
-			n = {
-				seq: sanitizeEmojiList(e),
-				via: "local",
-				why: o.message,
-			};
-		}
-		((Yn.visible = !1),
-			n.via !== "local" ||
-				/^no Meta API key/.test(n.why || "") ||
-				showError("Kid used its local child reply. Reason: " + n.why),
-			setStatus("🧒 Kid replies: " + n.seq.join(" ") + " — watch its wheel…"),
-			n.seq.length && addHistoryEntry("🧒 Kid — reply", e.join(" "), n.seq, n.via),
-			(kidWheelAnim.seq = n.seq.slice(0, MAX_EMOJI_PER_MESSAGE)),
-			(kidWheelAnim.picked = []),
-			(kidWheelAnim.idx = 0),
-			(kidWheelAnim.phase = "open"),
-			(kidWheelAnim.phaseT = performance.now()),
-			(kidWheelAnim.tab = -1),
-			(kidWheelAnim.openDur = randomBetween(0.34, 0.62)),
-			(kidWheelAnim.closeDur = randomBetween(0.3, 0.55)),
-			(kidWheelAnim.timing = randomPickTiming()),
-			(kidWheelAnim.prevPeg = null),
-			(kidWheelAnim.mode = "wheel"),
-			(kidWheel.visible = !0),
-			playWheelShimmer(!0));
-	}
-	function ud() {
-		const e = getWorldPosition(camera, new Vector3());
-		(kidFlatPos.copy(kidAvatar.position), (kidFlatPos.y = 0), toKidFlat.set(e.x, 0, e.z));
-		const t = toKidFlat.sub(kidFlatPos);
-		(t.lengthSq() < 0.01 && t.set(0, 0, 1),
-			t.normalize(),
-			kidWheel.position.copy(kidAvatar.position).addScaledVector(t, 0.42),
-			(kidWheel.position.y = 0.92),
-			kidWheel.lookAt(e.x, 0.92, e.z));
-	}
-	(new Quaternion(), new Vector3());
-	const downAxis = new Vector3(0, -1, 0),
-		kidBehavior = {
-			state: "idle",
-			t: 0,
-			dur: 2,
-			tx: 0,
-			tz: 0,
-			v: 0,
-			wk: 0,
-			bob: 0,
-			sw: 0,
-			headYaw: 0,
-			headTarget: 0,
-			headPitch: 0,
-			gzT: 3.5,
-			gzD: 0,
-			gz: null,
-			hT: 0,
-			glT: 5,
-			gl: 0,
-			lookT: 0,
-			nextNotice: 0,
-			lastNote: 0,
-			vr: null,
-			eng: !1,
-			side: 0.5,
-			rad: 1.6,
-			ax: 1e9,
-			az: 1e9,
-			shy: 0,
-			shyDone: !1,
-			willApproach: !1,
-			greet: !1,
-			vmax: 0.34,
-			yawWant: 0,
-			dsd: 0,
-			ag: 0,
-			at: 0,
-		},
-		randomRange = (e, t) => e + Math.random() * (t - e),
-		wrapAngle = (e) => Math.atan2(Math.sin(e), Math.cos(e)),
-		clampValue = (e, t, n) => Math.max(t, Math.min(n, e)),
-		isInsideRoom = (e, t) =>
-			arMode ||
-			(e >= roomBounds.x0 + 0.5 &&
-				e <= roomBounds.x1 - 0.5 &&
-				t >= roomBounds.z0 + 0.5 &&
-				t <= roomBounds.z1 - 0.5),
-		playerForwardFlat = new Vector3(),
-		wanderTarget = new Vector3(),
-		kidStepTarget = {
-			x: 0,
-			z: 0,
-		},
-		lookTargetPos = new Vector3();
-	function pickKidWanderTarget(e) {
-		const t = kidAvatar.position;
-		let n = t.x,
-			o = t.z;
-		for (let a = 0; a < 12; a++) {
-			if (arMode) {
-				const r = Math.random() * Math.PI * 2,
-					s = randomRange(2.4, 3.4);
-				((n = e.x + Math.cos(r) * s),
-					(o = e.z + Math.sin(r) * s),
-					wanderTarget.set(n, 0, o),
-					clampToRoomPlanes(wanderTarget, 0.45),
-					(n = wanderTarget.x),
-					(o = wanderTarget.z));
-			} else {
-				if (Math.random() < 0.55) {
-					const r = Math.random() * Math.PI * 2,
-						s = randomRange(2.6, 3.8);
-					((n = e.x + Math.cos(r) * s), (o = e.z + Math.sin(r) * s));
-				} else
-					((n = randomRange(roomBounds.x0 + 0.6, roomBounds.x1 - 0.6)),
-						(o = randomRange(roomBounds.z0 + 0.6, roomBounds.z1 - 0.6)));
-				(wanderTarget.set(n, 0, o),
-					clampPointToRoom(wanderTarget, 0.5),
-					(n = wanderTarget.x),
-					(o = wanderTarget.z));
-			}
-			if (Math.hypot(n - e.x, o - e.z) > 2.4 && Math.hypot(n - t.x, o - t.z) > 1) break;
-		}
-		((kidBehavior.tx = n),
-			(kidBehavior.tz = o),
-			(kidBehavior.vmax = randomRange(0.26, 0.4)),
-			(kidBehavior.dsd = 0));
-	}
-	function kidNoticePlayer(e) {
-		(camera.getWorldDirection(playerForwardFlat),
-			(playerForwardFlat.y = 0),
-			playerForwardFlat.lengthSq() < 0.04
-				? playerForwardFlat.set(0, 0, -1)
-				: playerForwardFlat.normalize());
-		const t = Math.atan2(playerForwardFlat.z, playerForwardFlat.x),
-			n = kidBehavior.side,
-			o = kidBehavior.rad;
-		((kidBehavior.ag = t), (kidBehavior.at = performance.now()));
-		let a = e.x,
-			r = e.z,
-			s = !1;
-		for (const l of [n, -n, 1.9 * n, -1.9 * n, 1.57, -1.57])
-			if (((a = e.x + Math.cos(t + l) * o), (r = e.z + Math.sin(t + l) * o), isInsideRoom(a, r))) {
-				s = !0;
-				break;
-			}
-		(wanderTarget.set(a, 0, r),
-			clampPointToRoom(wanderTarget, 0.5),
-			(a = wanderTarget.x),
-			(r = wanderTarget.z),
-			(kidBehavior.tx = a),
-			(kidBehavior.tz = r),
-			(kidBehavior.ax = e.x),
-			(kidBehavior.az = e.z));
-	}
-	function kidEnterIdle(e, t) {
-		((kidBehavior.state = "idle"),
-			(kidBehavior.t = 0),
-			(kidBehavior.dur = randomRange(e, t)),
-			(kidBehavior.hT = 0),
-			(kidBehavior.headTarget = 0),
-			(kidBehavior.yawWant =
-				Math.random() < 0.6
-					? kidAvatar.rotation.y + randomRange(-1.4, 1.4)
-					: kidAvatar.rotation.y));
-	}
-	function kidEnterLinger(e) {
-		if (
-			((kidBehavior.state = "linger"),
-			(kidBehavior.t = 0),
-			(kidBehavior.dur = randomRange(5, 9)),
-			e && kidBehavior.greet && kidWheelAnim.mode === "idle")
-		) {
-			((kidWheelAnim.mode = "wave"),
-				(kidWheelAnim.t0 = performance.now()),
-				(kidWheelAnim.wavedAt = kidWheelAnim.t0));
-			try {
-				setKidFaceExpression(
-					{
-						smile: 0.9,
-						jaw: 0.3,
-						brow: 0.3,
-					},
-					1800,
-				);
-			} catch {}
-		}
-		if (e)
-			try {
-				setStatus("🧒 The kid wandered over to say hi — face it and send it some emoji!");
-			} catch {}
-	}
-	function stepKidToward(e, t, n, o, a) {
-		const r = t - e.x,
-			s = n - e.z,
-			l = Math.hypot(r, s);
-		if (((a.x = t), (a.z = n), l < 0.4)) return a;
-		const i = r / l,
-			c = s / l,
-			d = o.x - e.x,
-			h = o.z - e.z,
-			u = d * i + h * c,
-			b = u > 0 && u < l + 0.3,
-			f = b ? Math.hypot(d - i * u, h - c * u) : 9;
-		return (
-			f < 1.9
-				? (kidBehavior.dsd || (kidBehavior.dsd = d * -c + h * i > 0 ? -1 : 1),
-					(a.x = e.x + i * u - c * kidBehavior.dsd * 2.1),
-					(a.z = e.z + c * u + i * kidBehavior.dsd * 2.1))
-				: f > 2.2 && (kidBehavior.dsd = 0),
-			a
-		);
-	}
-	function updateKidBehavior(e, t, n) {
-		const o = performance.now(),
-			a = kidAvatar.position;
-		kidBehavior.vr !== arMode &&
-			((kidBehavior.vr = arMode),
-			(kidBehavior.v = 0),
-			(kidBehavior.eng = !1),
-			(kidBehavior.nextNotice = o + randomRange(5e3, 9e3)),
-			(kidBehavior.lastNote = o),
-			(kidBehavior.lookT = 0),
-			(kidBehavior.dsd = 0),
-			kidEnterIdle(1.5, 3));
-		const r = n.x - a.x,
-			s = n.z - a.z,
-			l = Math.hypot(r, s),
-			i = Math.atan2(-r, -s);
-		(camera.getWorldDirection(playerForwardFlat), (playerForwardFlat.y = 0));
-		let c = !1;
-		(playerForwardFlat.lengthSq() > 0.04 &&
-			l > 0.3 &&
-			(playerForwardFlat.normalize(),
-			(c = (-playerForwardFlat.x * r - playerForwardFlat.z * s) / l > 0.93 && l < 6.5)),
-			(kidBehavior.lookT = c ? kidBehavior.lookT + e : Math.max(0, kidBehavior.lookT - 2 * e)));
-		const d = kidWheelAnim.mode !== "idle" || kidSpeechBusy;
-		if (
-			(d
-				? (kidBehavior.eng ||
-						((kidBehavior.eng = !0),
-						(kidBehavior.state = "linger"),
-						(kidBehavior.dur = randomRange(7, 11))),
-					(kidBehavior.t = 0))
-				: (kidBehavior.eng = !1),
-			(kidBehavior.t += e),
-			(kidBehavior.state === "idle" || kidBehavior.state === "wander") &&
-				!d &&
-				l < 8 &&
-				(o > kidBehavior.nextNotice ||
-					(kidBehavior.lookT > 1.6 && o - kidBehavior.lastNote > 25e3)))
-		) {
-			((kidBehavior.state = "notice"),
-				(kidBehavior.t = 0),
-				(kidBehavior.dur = 1.7),
-				(kidBehavior.lastNote = o),
-				(kidBehavior.nextNotice = o + randomRange(25e3, 55e3)),
-				(kidBehavior.lookT = 0),
-				(kidBehavior.willApproach = l > 3 && Math.random() < 0.8),
-				(kidBehavior.greet = Math.random() < 0.6),
-				(kidBehavior.side = (Math.random() < 0.5 ? -1 : 1) * randomRange(0.25, 0.9)),
-				(kidBehavior.rad = randomRange(2.1, 2.6)),
-				(kidBehavior.ax = kidBehavior.az = 1e9),
-				(kidBehavior.shy = 0),
-				(kidBehavior.shyDone = !1),
-				(kidBehavior.dsd = 0));
-			try {
-				setKidFaceExpression(
-					{
-						jaw: 0.4,
-						brow: 1,
-						smile: 0.4,
-					},
-					900,
-				);
-			} catch {}
-		}
-		const h = kidAvatar.rotation.y,
-			u = wrapAngle(i - h),
-			b = kidBehavior.state;
-		let f = h,
-			w = 0,
-			x = 3,
-			M = 0,
-			S = 0;
-		if (b === "idle")
-			((f = kidBehavior.yawWant),
-				(kidBehavior.hT -= e),
-				kidBehavior.hT <= 0 &&
-					((kidBehavior.hT = randomRange(1.2, 3)),
-					(kidBehavior.headTarget = randomRange(-0.8, 0.8))),
-				(M = kidBehavior.headTarget),
-				kidBehavior.t >= kidBehavior.dur &&
-					((kidBehavior.state = "wander"), (kidBehavior.t = 0), pickKidWanderTarget(n)));
-		else if (b === "wander") {
-			stepKidToward(a, kidBehavior.tx, kidBehavior.tz, n, kidStepTarget);
-			const R = Math.hypot(kidBehavior.tx - a.x, kidBehavior.tz - a.z);
-			((f = Math.atan2(-(kidStepTarget.x - a.x), -(kidStepTarget.z - a.z))),
-				(w = kidBehavior.vmax),
-				(M = 0.15 * Math.sin(t * 0.9)),
-				(R < 0.15 || kidBehavior.t > 30) && kidEnterIdle(2.5, 6.5));
-		} else if (b === "notice")
-			(kidBehavior.t < 0.8 ? (M = clampValue(u, -1.1, 1.1)) : ((f = i), (x = 4)),
-				kidBehavior.t >= kidBehavior.dur &&
-					(kidBehavior.willApproach
-						? ((kidBehavior.state = "approach"), (kidBehavior.t = 0), kidNoticePlayer(n))
-						: kidEnterLinger(!0)));
-		else if (b === "approach") {
-			(Math.hypot(n.x - kidBehavior.ax, n.z - kidBehavior.az) > 0.6 ||
-				(playerForwardFlat.lengthSq() > 0.04 &&
-					Math.abs(
-						wrapAngle(Math.atan2(playerForwardFlat.z, playerForwardFlat.x) - kidBehavior.ag),
-					) > 1.4 &&
-					o - kidBehavior.at > 2500)) &&
-				kidNoticePlayer(n);
-			const R = Math.hypot(kidBehavior.tx - a.x, kidBehavior.tz - a.z);
-			(stepKidToward(a, kidBehavior.tx, kidBehavior.tz, n, kidStepTarget),
-				(f = R > 0.7 ? Math.atan2(-(kidStepTarget.x - a.x), -(kidStepTarget.z - a.z)) : i),
-				(w = Math.max(0.16, Math.min(0.45, 0.16 + 0.24 * R))),
-				!kidBehavior.shyDone &&
-					l < 3.3 &&
-					((kidBehavior.shyDone = !0), Math.random() < 0.4 && (kidBehavior.shy = 1.2)),
-				kidBehavior.shy > 0 &&
-					((kidBehavior.shy -= e), (w = 0), (M = kidBehavior.side > 0 ? 0.5 : -0.5)),
-				(R < 0.3 || kidBehavior.t > 18 || l < 2) && kidEnterLinger(!0));
-		} else
-			((f = i),
-				(x = 4.5),
-				(M = 0.2 * Math.sin(t * 0.8)),
-				l > 3.4 ? (w = 0.3) : l < 2.1 && (w = -0.3),
-				kidBehavior.t >= kidBehavior.dur && (kidEnterIdle(1.5, 3), (kidBehavior.yawWant = h)));
-		if (
-			((b === "idle" || b === "wander") &&
-				((kidBehavior.glT -= e),
-				kidBehavior.glT <= 0 &&
-					((kidBehavior.gl = kidBehavior.gl ? 0 : 1),
-					(kidBehavior.glT = kidBehavior.gl ? randomRange(0.9, 1.7) : randomRange(6, 14))),
-				kidBehavior.gl && l < 8 && Math.abs(u) < 1.9 && (M = clampValue(u, -1, 1))),
-			(b === "idle" || b === "wander") &&
-				!d &&
-				typeof spaceBackdrop < "u" &&
-				spaceBackdrop.planets &&
-				spaceBackdrop.planets.length)
-		) {
-			if (((kidBehavior.gzT -= e), !kidBehavior.gz && kidBehavior.gzT <= 0)) {
-				const R = spaceBackdrop.planets[(Math.random() * spaceBackdrop.planets.length) | 0];
-				if (R && R.o) {
-					if (((kidBehavior.gz = R.o), (kidBehavior.gzD = randomRange(2.4, 4.6)), b === "idle")) {
-						R.o.getWorldPosition(lookTargetPos);
-						const T = Math.atan2(-(lookTargetPos.x - a.x), -(lookTargetPos.z - a.z));
-						kidBehavior.yawWant = h + clampValue(wrapAngle(T - h), -0.9, 0.9) * 0.7;
-					}
-				} else kidBehavior.gzT = 2;
-			}
-			if (kidBehavior.gz) {
-				((kidBehavior.gzD -= e), kidBehavior.gz.getWorldPosition(lookTargetPos));
-				const R = lookTargetPos.x - a.x,
-					T = lookTargetPos.z - a.z,
-					V = Math.hypot(R, T) || 1;
-				((M = clampValue(wrapAngle(Math.atan2(-R, -T) - h), -1.15, 1.15)),
-					(S = clampValue(Math.atan2(lookTargetPos.y - 1.05, V), -0.08, 0.6)),
-					kidBehavior.gzD <= 0 &&
-						((kidBehavior.gz = null), (kidBehavior.gzT = randomRange(3.5, 8))));
-			}
-		} else kidBehavior.gz && ((kidBehavior.gz = null), (kidBehavior.gzT = randomRange(2, 5)));
-		kidWheelAnim.mode !== "idle" && (w = 0);
-		const A = wrapAngle(f - h),
-			P = Math.max(0, 1 - Math.abs(A) / 1.1),
-			L = w > 0 ? w * P : w;
-		if (
-			((kidBehavior.v += (L - kidBehavior.v) * Math.min(1, 3 * e)),
-			(kidAvatar.rotation.y += A * Math.min(1, e * x)),
-			Math.abs(kidBehavior.v) > 0.002)
-		) {
-			const R = kidAvatar.rotation.y;
-			((a.x += -Math.sin(R) * kidBehavior.v * e), (a.z += -Math.cos(R) * kidBehavior.v * e));
-		}
-		{
-			const V = n.x - a.x,
-				J = n.z - a.z,
-				I = Math.hypot(V, J);
-			if (I > 0.01 && I < 1.7) {
-				const Le = Math.min((1.7 - I) * Math.min(1, 5 * e), 2.2 * e);
-				((a.x -= (V / I) * Le), (a.z -= (J / I) * Le));
-			}
-			const H = n.x - a.x,
-				Se = n.z - a.z,
-				ze = Math.hypot(H, Se);
-			ze > 0.01 && ze < 1.4 && ((a.x = n.x - (H / ze) * 1.4), (a.z = n.z - (Se / ze) * 1.4));
-		}
-		(wanderTarget.set(a.x, 0, a.z),
-			clampPointToRoom(wanderTarget, 0.45),
-			(a.x = wanderTarget.x),
-			(a.z = wanderTarget.z));
-		const O = Math.abs(kidBehavior.v);
-		kidBehavior.wk += O * e * 9 * (kidBehavior.v < 0 ? -1 : 1);
-		const z = Math.sin(kidBehavior.wk) * 0.4 * Math.min(1, O / 0.34);
-		((kidBehavior.sw = z),
-			(kidBehavior.bob = -0.335 * (1 - Math.cos(z))),
-			kidFeet.length > 1 &&
-				((kidFeet[0].rotation.x = z),
-				(kidFeet[1].rotation.x = -z),
-				(kidFeet[0].userData.foot.rotation.x = -0.7 * z),
-				(kidFeet[1].userData.foot.rotation.x = 0.7 * z)),
-			(kidBehavior.headYaw += (M - kidBehavior.headYaw) * Math.min(1, e * 6)),
-			(kidBehavior.headPitch += (S - kidBehavior.headPitch) * Math.min(1, e * 4)),
-			kidWheelAnim.mode !== "idle" && (kidLeftArm.rotation.x *= Math.pow(0.02, e)));
-	}
-	function updateKidSafely(e, t) {
-		try {
-			updateKid(e, t);
-		} finally {
-			animateKidFingers(t, e);
-		}
-	}
-	function updateKid(e, t) {
-		const n = getWorldPosition(camera, new Vector3());
-		(updateKidBehavior(e, t, n),
-			(kidAvatar.position.y = 0.008 * Math.sin(1.8 * t) + kidBehavior.bob),
-			(kidBody.rotation.y = 0.08 * Math.sin(0.6 * t) + kidBehavior.headYaw),
-			(kidBody.rotation.x = kidBehavior.headPitch),
-			(kidBody.rotation.z = 0.03 * Math.sin(0.9 * t)),
-			kidHead && kidHead.lookAt(n.x, n.y, n.z),
-			updateKidFace(e, t));
-		const o = checkKidNearPlayer();
-		if (
-			(o.near &&
-			o.facing &&
-			kidWheelAnim.mode === "idle" &&
-			updateKidHandPoints(performance.now(), !0) &&
-			performance.now() - kidWheelAnim.wavedAt > 3500
-				? ((kidWheelAnim.wavedAt = performance.now()),
-					(kidWheelAnim.mode = "wave"),
-					(kidWheelAnim.t0 = performance.now()),
-					(As.left.length = As.right.length = 0),
-					setStatus("🧒 The kid waved back! Send some emoji (close your wheel) — it will answer."))
-				: (o.near && o.facing) || updateKidHandPoints(performance.now(), !1),
-			kidWheelAnim.mode === "wave")
-		) {
-			const l = (performance.now() - kidWheelAnim.t0) / 1e3,
-				i = (d) => (d = Math.max(0, Math.min(1, d))) * d * (3 - 2 * d),
-				c = i(l / 0.55) * (1 - i((l - 1.7) / 0.7));
-			((kidRightArm.rotation.z = 0.14 + 1.11 * c + 0.04 * Math.sin(10 * l) * c),
-				(kidRightArm.rotation.y = 0.9 * c),
-				(kidRightArm.rotation.x = 0),
-				l > 2.4 && ((kidWheelAnim.mode = "idle"), kidRightArm.rotation.set(0, 0, 0.14)));
-		} else
-			kidWheelAnim.mode === "idle" &&
-				((kidRightArm.rotation.y *= 1 - Math.min(1, 8 * e)),
-				(kidRightArm.rotation.z += (0.14 - kidRightArm.rotation.z) * Math.min(1, 8 * e)),
-				(kidRightArm.rotation.x +=
-					(0.7 * kidBehavior.sw - kidRightArm.rotation.x) * Math.min(1, 10 * e)),
-				(kidLeftArm.rotation.x +=
-					(-0.7 * kidBehavior.sw - kidLeftArm.rotation.x) * Math.min(1, 10 * e)),
-				(kidLeftArm.rotation.z = -0.14 - 0.04 * Math.sin(1.8 * t)),
-				(kidRightArm.rotation.z += 0.04 * Math.sin(1.8 * t + 1)));
-		if (
-			(animateKidArm(t, e),
-			kidWheelAnim.mode !== "wheel" &&
-				kidRightArm.userData.elbow &&
-				((kidWheelAnim.curl += (0.12 - kidWheelAnim.curl) * Math.min(1, 8 * e)),
-				kidRightArm.userData.fingers.forEach(
-					(l, i) =>
-						(l.rotation.x =
-							l.userData.baseX + kidWheelAnim.curl * 0.4 + 0.03 * Math.sin(t * 1.7 + i * 1.3)),
-				),
-				kidRightArm.userData.thumb &&
-					(kidRightArm.userData.thumb.rotation.x =
-						kidRightArm.userData.thumb.userData.baseX + kidWheelAnim.curl * 0.3)),
-			kidWheelAnim.mode === "thinking" &&
-				(Yn.position.copy(kidAvatar.position),
-				(Yn.position.y = 1.4 + 0.02 * Math.sin(3 * t)),
-				Yn.children.forEach((l, i) => {
-					l.position.y = 0.05 * Math.max(0, Math.sin(5 * t - 0.8 * i));
-				}),
-				(kidBody.rotation.z = 0.18),
-				kidRightArm.rotation.set(0.9, 0, 0.12)),
-			kidWheelAnim.mode !== "wheel")
-		)
-			return void (kidWheelAnim.mode !== "thinking" && (Yn.visible = !1));
-		ud();
-		const a = performance.now(),
-			r = (a - kidWheelAnim.phaseT) / 1e3,
-			s = kidWheelAnim.timing || randomPickTiming();
-		if (kidWheelAnim.phase === "open") {
-			const l = kidWheelAnim.idx === 0 && !kidWheelAnim.picked.length,
-				i = Math.min(1, r / (l ? kidWheelAnim.openDur : s.pauseDur)),
-				c = 1 - Math.pow(1 - i, 3);
-			if (
-				(l && kidWheel.scale.setScalar(Math.max(0.001, 0.62 * c)),
-				kidBallWobble.set(
-					0.006 * Math.sin(a * 0.0016 + kidWheelAnim.ph1),
-					0.005 * Math.cos(a * 0.0013 + kidWheelAnim.ph2),
-				),
-				kidGoldenBall.position.set(kidBallWobble.x, kidBallWobble.y, -0.05),
-				i >= 1)
-			)
-				if (kidWheelAnim.idx >= kidWheelAnim.seq.length)
-					((kidWheelAnim.phase = "close"), (kidWheelAnim.phaseT = a), playWheelShimmer(!1));
-				else {
-					const d = kidWheelAnim.seq[kidWheelAnim.idx],
-						h = findWheelPageForEmoji(d),
-						u = h !== kidWheelAnim.tab;
-					(u && ((kidWheelAnim.tab = h), buildKidWheelPage(h)),
-						(kidWheelAnim.target =
-							kidWheelEmojis.find(
-								(b) => stripVariationSelector(b.userData.emoji) === stripVariationSelector(d),
-							) || kidWheelEmojis[0]),
-						kidWheelAnim.from.copy(kidBallWobble),
-						updateKidBallDrag(),
-						(kidWheelAnim.timing = randomPickTiming()),
-						(kidWheelAnim.prevPeg = null),
-						setKidFaceFromEmoji(
-							d,
-							1e3 * (kidWheelAnim.timing.dragDur + kidWheelAnim.timing.holdDur) + 1100,
-						),
-						(kidWheelAnim.phase = u ? "scan" : "drag"),
-						(kidWheelAnim.phaseT = a));
-				}
-		} else if (kidWheelAnim.phase === "scan") {
-			const l = Math.min(1, r / s.scanDur),
-				i = l * l * (3 - 2 * l);
-			(kidWheelAnim.target &&
-				kidBallWobble.lerpVectors(
-					kidWheelAnim.from,
-					rd.set(
-						kidWheelAnim.from.x +
-							0.16 * (kidWheelAnim.target.userData.home.x - kidWheelAnim.from.x),
-						kidWheelAnim.from.y +
-							0.16 * (kidWheelAnim.target.userData.home.y - kidWheelAnim.from.y),
-					),
-					i,
-				),
-				r >= s.scanDur &&
-					(kidWheelAnim.from.copy(kidBallWobble),
-					updateKidBallDrag(),
-					(kidWheelAnim.phase = "drag"),
-					(kidWheelAnim.phaseT = a)));
-		} else if (kidWheelAnim.phase === "drag") {
-			const l = kidWheelAnim.target;
-			if (l) {
-				const i = Math.min(1, r / s.dragDur);
-				let c = easeByType(i, s.ease);
-				((c = Math.max(
-					0,
-					Math.min(1, c + 0.065 * Math.sin(c * 6.283 + kidWheelAnim.ph2) * Math.sin(c * Math.PI)),
-				)),
-					quadraticBezier(
-						kidBallWobble,
-						kidWheelAnim.from,
-						kidWheelAnim.ctrl,
-						l.userData.home.x,
-						l.userData.home.y,
-						c,
-					));
-				const d = l.userData.home.x - kidWheelAnim.from.x,
-					h = l.userData.home.y - kidWheelAnim.from.y,
-					u = Math.hypot(d, h) || 1,
-					b =
-						Math.sin(i * Math.PI) *
-						(s.wobble +
-							0.007 * Math.sin(i * 9 + kidWheelAnim.ph1) +
-							0.004 * Math.sin(i * 17 + kidWheelAnim.ph3));
-				if (
-					((kidBallWobble.x += (-h / u) * b),
-					(kidBallWobble.y += (d / u) * b),
-					(kidWheelAnim.press = 0),
-					i < 1)
-				) {
-					let f = null,
-						w = 0.048;
-					for (const x of kidWheelEmojis) {
-						const M = Math.hypot(
-							kidBallWobble.x - x.userData.home.x,
-							kidBallWobble.y - x.userData.home.y,
-						);
-						M < w && ((w = M), (f = x));
-					}
-					(f && f !== l && f !== kidWheelAnim.prevPeg && playEmojiNote(f, !1, kidWheelEmojis),
-						f !== l && (kidWheelAnim.prevPeg = f));
-				}
-				if (
-					i >= 1 &&
-					(kidBallWobble.set(l.userData.home.x, l.userData.home.y),
-					(kidWheelAnim.phase = "hold"),
-					(kidWheelAnim.phaseT = a),
-					(kidWheelAnim.prevPeg = l),
-					setKidFaceFromEmoji(kidWheelAnim.seq[kidWheelAnim.idx], 1e3 * s.holdDur + 1200),
-					kidWheelAnim.picked[kidWheelAnim.picked.length - 1] !==
-						kidWheelAnim.seq[kidWheelAnim.idx])
-				) {
-					(kidWheelAnim.picked.push(kidWheelAnim.seq[kidWheelAnim.idx]),
-						showKidWheelEmojis(kidWheelAnim.picked));
-					try {
-						playEmojiNote(l, !0, kidWheelEmojis);
-					} catch {}
-				}
-			} else ((kidWheelAnim.phase = "open"), (kidWheelAnim.phaseT = a));
-		} else if (kidWheelAnim.phase === "hold") {
-			const l = kidWheelAnim.target;
-			(l &&
-				((kidWheelAnim.press = Math.sin(Math.min(1, r / s.holdDur) * Math.PI)),
-				kidBallWobble.set(
-					l.userData.home.x + 0.0045 * Math.sin(r * 21 + kidWheelAnim.ph1) * kidWheelAnim.press,
-					l.userData.home.y + 0.0045 * Math.cos(r * 17 + kidWheelAnim.ph2) * kidWheelAnim.press,
-				)),
-				l && l.scale.setScalar(1.35 + 0.18 * Math.sin(Math.min(1, r / s.holdDur) * Math.PI)),
-				r > s.holdDur &&
-					(l && l.scale.setScalar(1),
-					kidWheelAnim.from.copy(kidBallWobble),
-					(kidWheelAnim.timing = randomPickTiming()),
-					startKidBallReturn(),
-					(kidWheelAnim.press = 0),
-					(kidWheelAnim.phase = "return"),
-					(kidWheelAnim.phaseT = a)));
-		} else if (kidWheelAnim.phase === "return") {
-			const l = Math.min(1, r / s.returnDur);
-			let i = easeByType(l, s.ease === 2 ? 0 : s.ease);
-			((i = Math.max(
-				0,
-				Math.min(1, i + 0.05 * Math.sin(i * 6.283 + kidWheelAnim.ph1) * Math.sin(i * Math.PI)),
-			)),
-				quadraticBezier(kidBallWobble, kidWheelAnim.from, kidWheelAnim.rCtrl, 0, 0, i));
-			const c = Math.hypot(kidWheelAnim.from.x, kidWheelAnim.from.y) || 1;
-			((kidBallWobble.x +=
-				(-kidWheelAnim.from.y / c) *
-				Math.sin(l * Math.PI) *
-				0.006 *
-				Math.sin(l * 11 + kidWheelAnim.ph2)),
-				(kidBallWobble.y +=
-					(kidWheelAnim.from.x / c) *
-					Math.sin(l * Math.PI) *
-					0.006 *
-					Math.sin(l * 11 + kidWheelAnim.ph2)),
-				l >= 1 &&
-					(kidBallWobble.set(0, 0),
-					kidWheelAnim.idx++,
-					(kidWheelAnim.phase = "open"),
-					(kidWheelAnim.phaseT = a)));
-		} else if (kidWheelAnim.phase === "close") {
-			const l = Math.min(1, r / kidWheelAnim.closeDur);
-			(kidWheel.scale.setScalar(Math.max(0.001, 0.62 * (1 - l * l))),
-				kidBallWobble.set(0, 0),
-				kidGoldenBall.position.set(0, 0, -0.05),
-				l >= 1 &&
-					((kidWheelAnim.mode = "idle"),
-					(kidWheelAnim.phase = ""),
-					(kidWheel.visible = !1),
-					(kidSpeechBusy = !1),
-					(kidCooldownUntil = a + 2500),
-					kidRightArm.rotation.set(0, 0, 0.14),
-					showKidWheelEmojis([]),
-					(kidWheelAnim.picked = []),
-					setKidFaceFromEmoji(kidWheelAnim.seq, 3200),
-					kidWheelAnim.seq.length && sendEmojiMessage(kidWheelAnim.seq, ll)));
-		}
-		(kidBallWobble.length() > emojiRingRadius && kidBallWobble.setLength(emojiRingRadius),
-			updateKidStickMarker(e, t, kidBallWobble.x, kidBallWobble.y),
-			kidGoldenBall.position.set(kidBallWobble.x, kidBallWobble.y, -0.05),
-			(kidGoldenBall.material.matcap =
-				kidWheelAnim.phase === "hold" ? brightGoldMatcap : goldMatcap),
-			kidWheel.visible &&
-				(() => {
-					kidGoldenBall.getWorldPosition(kidBallWorldPos);
-					const l = kidAvatar.worldToLocal(kidBallWorldPos.clone());
-					(shoulderPos.copy(kidRightArm.position),
-						armTargetLocal.copy(l),
-						armDirection.subVectors(armTargetLocal, shoulderPos));
-					let i = armDirection.length();
-					if (i < 1e-5) return;
-					armDirection.divideScalar(i);
-					const c = 0.17,
-						d = 0.205;
-					((i = Math.max(0.13, Math.min(0.352, i))),
-						armTargetLocal.copy(shoulderPos).addScaledVector(armDirection, i),
-						armBendDir
-							.set(0.85, -0.3, 0.62)
-							.addScaledVector(armDirection, -armBendDir.dot(armDirection)),
-						armBendDir.lengthSq() < 0.01 &&
-							armBendDir.set(0, 0, 1).addScaledVector(armDirection, -armDirection.z),
-						armBendDir.normalize());
-					const h = (c * c - d * d + i * i) / (2 * i),
-						u = Math.sqrt(Math.max(c * c - h * h, 4e-4));
-					(elbowPos
-						.copy(shoulderPos)
-						.addScaledVector(armDirection, h)
-						.addScaledVector(armBendDir, u),
-						upperArmDir.subVectors(elbowPos, shoulderPos).normalize(),
-						foreArmDir.subVectors(armTargetLocal, elbowPos).normalize(),
-						upperArmQuat.setFromUnitVectors(downAxis, upperArmDir));
-					const b =
-						kidWheelAnim.phase === "drag"
-							? 7.2
-							: kidWheelAnim.phase === "return"
-								? 6.2
-								: kidWheelAnim.phase === "hold"
-									? 10
-									: 8.5;
-					(kidRightArm.quaternion.slerp(upperArmQuat, 1 - Math.exp(-b * e)),
-						foreArmQuat.setFromUnitVectors(downAxis, foreArmDir),
-						foreArmLocalQuat.copy(upperArmQuat).invert().multiply(foreArmQuat),
-						kidRightArm.userData.elbow &&
-							kidRightArm.userData.elbow.quaternion.slerp(
-								foreArmLocalQuat,
-								1 - Math.exp(-(b - 1.6) * e),
-							));
-					const f =
-						kidWheelAnim.phase === "hold"
-							? 0.9
-							: kidWheelAnim.phase === "drag"
-								? 0.5 + 0.18 * Math.sin(t * 7 + kidWheelAnim.ph1)
-								: kidWheelAnim.phase === "scan"
-									? 0.3 + 0.2 * Math.sin(t * 11 + kidWheelAnim.ph2)
-									: 0.22;
-					((kidWheelAnim.curl += (f - kidWheelAnim.curl) * Math.min(1, 9 * e)),
-						kidRightArm.userData.fingers &&
-							kidRightArm.userData.fingers.forEach(
-								(w, x) =>
-									(w.rotation.x =
-										w.userData.baseX +
-										kidWheelAnim.curl * (0.5 + 0.1 * Math.sin(t * 5 + x * 1.7 + kidWheelAnim.ph3)) +
-										kidWheelAnim.press * 0.35),
-							),
-						kidRightArm.userData.thumb &&
-							(kidRightArm.userData.thumb.rotation.x =
-								kidRightArm.userData.thumb.userData.baseX +
-								kidWheelAnim.curl * 0.38 +
-								kidWheelAnim.press * 0.25),
-						kidRightArm.userData.hand &&
-							(kidRightArm.userData.hand.rotation.x =
-								0.22 * kidWheelAnim.curl + 0.08 * Math.sin(t * 3.1 + kidWheelAnim.ph1)),
-						(kidLeftArm.rotation.x +=
-							(0.12 * Math.sin(t * 1.9 + kidWheelAnim.ph2) -
-								0.06 * kidWheelAnim.curl -
-								kidLeftArm.rotation.x) *
-							Math.min(1, 5 * e)),
-						kidWheelAnim.target &&
-							((kidBody.rotation.y += Math.max(
-								-0.38,
-								Math.min(0.38, 0.85 * -kidWheelAnim.target.userData.home.x),
-							)),
-							(kidBody.rotation.x =
-								0.42 * -kidWheelAnim.target.userData.home.y +
-								0.05 * Math.sin(t * 2.2 + kidWheelAnim.ph1))));
-				})());
 	}
 	function startMainLoop() {
 		renderer.setAnimationLoop((e, t) => {
@@ -10508,12 +8561,13 @@ Their emoji message to you: ` +
 				} catch (i) {
 					startMainLoop.w || ((startMainLoop.w = 1), console.warn("[ar room]", i));
 				}
-			(s || (camera.position.set(0, 1.6, 0), camera.rotation.set(cameraPitch, cameraYaw, 0, "YXZ")),
+			(s || isWheelOpen || (cameraYaw += ((keysDown.ArrowLeft ? 1 : 0) - (keysDown.ArrowRight ? 1 : 0)) * 1.8 * n),
+				s || (camera.position.set(0, 1.6, 0), camera.rotation.set(cameraPitch, cameraYaw, 0, "YXZ")),
 				skyDome.visible && getWorldPosition(camera, skyDome.position));
 			{
 				const i = s && !(!a.src || !a.src.hand) && !1,
-					c = i ? 0 : s ? a.stick[0] : (keysDown.KeyD ? 1 : 0) - (keysDown.KeyA ? 1 : 0),
-					d = i ? -1 : s ? a.stick[1] : (keysDown.KeyS ? 1 : 0) - (keysDown.KeyW ? 1 : 0);
+					c = i ? 0 : s ? a.stick[0] : MathUtils.clamp((keysDown.KeyD ? 1 : 0) - (keysDown.KeyA ? 1 : 0) + touchStick.x, -1, 1),
+					d = i ? -1 : s ? a.stick[1] : MathUtils.clamp((keysDown.KeyS || (!isWheelOpen && keysDown.ArrowDown) ? 1 : 0) - (keysDown.KeyW || (!isWheelOpen && keysDown.ArrowUp) ? 1 : 0) + touchStick.y, -1, 1);
 				if (!(s && arMode) && (Math.abs(c) > 0.12 || Math.abs(d) > 0.12)) {
 					const h = new Vector3();
 					(i
@@ -10523,7 +8577,7 @@ Their emoji message to you: ` +
 						h.lengthSq() < 0.01 && (camera.getWorldDirection(h), (h.y = 0)),
 						h.normalize());
 					const u = new Vector3().crossVectors(h, new Vector3(0, 1, 0));
-					(playerRig.position.addScaledVector(h, 2.2 * -d * n).addScaledVector(u, 2.2 * c * n),
+					(playerRig.position.addScaledVector(h, (s || !(keysDown.ShiftLeft || keysDown.ShiftRight) ? 2.2 : 4) * -d * n).addScaledVector(u, (s || !(keysDown.ShiftLeft || keysDown.ShiftRight) ? 2.2 : 4) * c * n),
 						arMode
 							? roomPlanes.length &&
 								(getWorldPosition(camera, headPos),
@@ -10549,222 +8603,10 @@ Their emoji message to you: ` +
 				((jumpVelocity -= 9.8 * n),
 				(playerRig.position.y += jumpVelocity * n),
 				playerRig.position.y <= 0 && ((playerRig.position.y = 0), (jumpVelocity = 0)));
-			{
-				const i = camera.position.y;
-				i > 0.9 && (peakReach = Math.max(peakReach, i));
-				const c = peakReach > 0.9 ? MathUtils.clamp(peakReach / referenceReach, 0.6, 1.4) : 1;
-				((avatarScale += (c - avatarScale) * Math.min(1, 3 * n)),
-					playerAvatar.scale.setScalar(avatarScale));
-				const d =
-					peakReach > 0.9 && i > 0.9 ? MathUtils.clamp(peakReach - i, 0, 0.6 * peakReach) : 0;
-				((avatarBodyDrop += (d / avatarScale - avatarBodyDrop) * Math.min(1, 20 * n)),
-					(bodyTopY = playerRig.position.y + i + 0.17));
-			}
-			{
-				getWorldPosition(camera, kidFlatPos);
-				const i = playerAvatar.position.clone();
-				if (
-					(playerAvatar.position.set(
-						kidFlatPos.x + 0.09 * Math.sin(avatarYaw) * avatarScale,
-						playerRig.position.y,
-						kidFlatPos.z + 0.09 * Math.cos(avatarYaw) * avatarScale,
-					),
-					(playerAvatar.rotation.y = 0),
-					n > 1e-4)
-				) {
-					const N = playerAvatar.position.clone().sub(i);
-					((N.y = 0), avatarVelocity.lerp(N.divideScalar(n), 0.2));
-				}
-				const c = avatarVelocity.length(),
-					d = Math.min(1, c / 1.2);
-				walkPhase += c * n * 4.2;
-				const h = c > 0.05 ? avatarVelocity.clone().setY(0).normalize() : new Vector3(0, 0, 1),
-					u = playerAvatar.userData.parts,
-					b = (new Vector3(0, 0.95, 0), new Vector3(0, 1.48, 0), 0.3 * Math.sin(walkPhase) * d),
-					f = 0.09 * d;
-				{
-					const N = camera.getWorldDirection(new Vector3());
-					if (Math.hypot(N.x, N.z) > 0.25) {
-						let re = Math.atan2(-N.x, -N.z) - avatarYaw;
-						((re = Math.atan2(Math.sin(re), Math.cos(re))), (avatarYaw += re * Math.min(1, 8 * n)));
-					}
-				}
-				const w = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), avatarYaw),
-					x = new Vector3(-0.09, Math.max(0, Math.cos(walkPhase)) * f, 0)
-						.applyQuaternion(w)
-						.addScaledVector(h, b),
-					M = new Vector3(0.09, Math.max(0, -Math.cos(walkPhase)) * f, 0)
-						.applyQuaternion(w)
-						.addScaledVector(h, -b),
-					S = new Vector3(-0.18, 1.42 - avatarBodyDrop, 0).applyQuaternion(w),
-					A = new Vector3(0.18, 1.42 - avatarBodyDrop, 0).applyQuaternion(w),
-					P = new Vector3(-0.075, 0.95 - avatarBodyDrop, 0).applyQuaternion(w),
-					L = new Vector3(0.075, 0.95 - avatarBodyDrop, 0).applyQuaternion(w),
-					O = camera.getWorldQuaternion(new Quaternion()),
-					z = new Vector3(-0.2, 0.74, -0.03).applyQuaternion(w),
-					R = new Vector3(0.2, 0.74, -0.03).applyQuaternion(w),
-					T = w.clone().multiply(forearmTilt);
-				let V, J;
-				if (s) {
-					const N = a.src
-							? (a.hj ? a.hj.p : getWorldPosition(controllers.left, new Vector3()))
-									.sub(playerAvatar.position)
-									.divideScalar(avatarScale)
-							: z,
-						re = r.src
-							? (r.hj ? r.hj.p : getWorldPosition(controllers.right, new Vector3()))
-									.sub(playerAvatar.position)
-									.divideScalar(avatarScale)
-							: R,
-						Ce = 1 - Math.exp(28 * -n),
-						Ae = 1 - Math.exp(24 * -n);
-					(leftHandRest.distanceToSquared(N) > 0.36
-						? leftHandRest.copy(N)
-						: leftHandRest.lerp(N, Ce),
-						rightHandRest.distanceToSquared(re) > 0.36
-							? rightHandRest.copy(re)
-							: rightHandRest.lerp(re, Ce),
-						(V = leftHandRest.clone()),
-						(J = rightHandRest.clone()),
-						leftHandQuat.slerp(
-							a.src
-								? (a.hj
-										? a.hj.q.clone()
-										: controllers.left.getWorldQuaternion(new Quaternion())
-									).multiply(leftHandRotationFix)
-								: T,
-							Ae,
-						),
-						rightHandQuat.slerp(
-							r.src
-								? (r.hj
-										? r.hj.q.clone()
-										: controllers.right.getWorldQuaternion(new Quaternion())
-									).multiply(rightHandRotationFix)
-								: T,
-							Ae,
-						));
-				} else {
-					const N = K1(A);
-					((ol = !!N),
-						leftHandRest.lerp(
-							isWheelOpen ? getWheelRestPosition().sub(playerAvatar.position) : z,
-							0.2,
-						),
-						rightHandRest.lerp(N ? reachTarget : R, N ? 0.35 : 0.2),
-						(V = leftHandRest.clone()),
-						(J = rightHandRest.clone()));
-					const re = Math.min(1, 10 * n);
-					(leftHandQuat.slerp(isWheelOpen ? O : T, re),
-						rightHandQuat.slerp(N ? reachQuat : T, N ? Math.min(1, 16 * n) : re));
-				}
-				const I = V.clone().add(new Vector3(0, 0, 0.07).applyQuaternion(leftHandQuat)),
-					H = J.clone().add(new Vector3(0, 0, 0.07).applyQuaternion(rightHandQuat)),
-					Se = Math.min(1, 12 * n);
-				(clampHandReach(S, I, D1, -1, w, Se), clampHandReach(A, H, T1, 1, w, Se));
-				const ze = solveTwoBoneIK(S, I, elbowHint(-1, w)),
-					Le = solveTwoBoneIK(A, H, elbowHint(1, w)),
-					ct = new Vector3(0, 0.15, -1).applyQuaternion(w),
-					Ve = solveTwoBoneIK(
-						P,
-						x.clone().setY(Math.max(x.y, 0.04)),
-						ct,
-						upperArmLength,
-						forearmLength,
-					),
-					et = solveTwoBoneIK(
-						L,
-						M.clone().setY(Math.max(M.y, 0.04)),
-						ct,
-						upperArmLength,
-						forearmLength,
-					);
-				(u.torso.quaternion.copy(w),
-					u.pelvis.quaternion.copy(w),
-					u.upper.quaternion.copy(w),
-					(u.torso.position.y = u.pelvis.position.y = u.upper.position.y = -avatarBodyDrop),
-					torsoOccluder.quaternion.copy(w),
-					pelvisOccluder.quaternion.copy(w),
-					upperBodyOccluder.quaternion.copy(w),
-					(torsoOccluder.position.y =
-						pelvisOccluder.position.y =
-						upperBodyOccluder.position.y =
-							-avatarBodyDrop));
-				const ln = getWorldPosition(camera, new Vector3())
-						.sub(playerAvatar.position)
-						.divideScalar(avatarScale)
-						.sub(new Vector3(0, 0.022, -0.09).applyQuaternion(O)),
-					Dn = new Vector3(0, 1.48 - avatarBodyDrop, 0),
-					Cn = ln.clone().add(new Vector3(0, -0.085, 0.015).applyQuaternion(O));
-				{
-					const N = Cn.clone().sub(Dn),
-						re = N.length(),
-						Ce = new Vector3(0, 0, -1).applyQuaternion(O).y;
-					Ce > -0.2 && Ce < 0.35 && re > 0.05 && re < 0.2 && (Hr += (re - Hr) * Math.min(1, 2 * n));
-					const Ae = Math.min(0.14, 1.06 * Hr);
-					if (re > Ae) {
-						const je = N.clone()
-							.multiplyScalar(Ae / re)
-							.sub(N);
-						(ln.add(je), Cn.add(je));
-					}
-				}
-				(u.head.position.copy(ln),
-					u.head.quaternion.copy(O),
-					stretchCylinderBetween(u.neck, Dn, Cn),
-					u.jNk.position.copy(Dn),
-					headOccluder.position.copy(u.head.position),
-					headOccluder.quaternion.copy(u.head.quaternion),
-					neckOccluder.position.copy(u.neck.position),
-					neckOccluder.quaternion.copy(u.neck.quaternion),
-					neckOccluder.scale.copy(u.neck.scale),
-					neckJointOccluder.position.copy(u.jNk.position),
-					stretchCylinderBetween(u.upL, S, ze.el),
-					stretchCylinderBetween(u.foreL, ze.el, ze.ha),
-					stretchCylinderBetween(u.upR, A, Le.el),
-					stretchCylinderBetween(u.foreR, Le.el, Le.ha));
-				{
-					const N = new Vector3(-0.045, 1.468 - avatarBodyDrop, 0.004).applyQuaternion(w),
-						re = new Vector3(0.045, 1.468 - avatarBodyDrop, 0.004).applyQuaternion(w);
-					(stretchCylinderBetween(u.clavL, N, S), stretchCylinderBetween(u.clavR, re, A));
-				}
-				(u.jShL.position.copy(S),
-					u.jShR.position.copy(A),
-					u.jElL.position.copy(ze.el),
-					u.jElR.position.copy(Le.el),
-					u.jWrL.position.copy(ze.ha),
-					u.jWrR.position.copy(Le.ha));
-				const mt = new Vector3(0, 0, -0.062);
-				(u.jHaL.position.copy(ze.ha).add(mt.clone().applyQuaternion(leftHandQuat)),
-					u.jHaL.quaternion.copy(leftHandQuat),
-					u.jHaR.position.copy(Le.ha).add(mt.clone().applyQuaternion(rightHandQuat)),
-					u.jHaR.quaternion.copy(rightHandQuat),
-					u.fingL.position.copy(u.jHaL.position),
-					u.fingL.quaternion.copy(leftHandQuat),
-					u.fingR.position.copy(u.jHaR.position),
-					u.fingR.quaternion.copy(rightHandQuat),
-					s
-						? (poseFingers(u.fingL, a.triggerV, a.squeezeV, a.thumbOn, n, !!a.src),
-							poseFingers(u.fingR, r.triggerV, r.squeezeV, r.thumbOn, n, !!r.src))
-						: (poseFingers(u.fingL, 0, 0.35, !1, n, !1),
-							poseFingers(u.fingR, desktopTriggerDown ? 1 : 0, ol ? 0.9 : 0.35, !1, n, !0, ol)));
-				{
-					const N = 0.5 * Math.sin(1.7 * o) + 0.5;
-					((u.torso.scale.x = 1.12 * (1 + 0.008 * N)), (u.torso.scale.z = 1 + 0.012 * N));
-				}
-				(stretchCylinderBetween(u.thighL, P, Ve.el),
-					stretchCylinderBetween(u.shinL, Ve.el, Ve.ha),
-					stretchCylinderBetween(u.thighR, L, et.el),
-					stretchCylinderBetween(u.shinR, et.el, et.ha),
-					u.jKnL.position.copy(Ve.el),
-					u.jKnR.position.copy(et.el));
-				const Rt = new Vector3(0, 0, -0.045).applyQuaternion(w);
-				(u.footL.position.copy(Ve.ha).add(Rt),
-					(u.footL.position.y = Math.max(Ve.ha.y - 0.01, 0.014)),
-					u.footL.quaternion.copy(w),
-					u.footR.position.copy(et.ha).add(Rt),
-					(u.footR.position.y = Math.max(et.ha.y - 0.01, 0.014)),
-					u.footR.quaternion.copy(w));
+			try {
+				updateStickMan(n, o, a, r, s);
+			} catch (i) {
+				updateStickMan.w || ((updateStickMan.w = 1), console.warn("[stick man]", i));
 			}
 			const l = {
 				left: null,
@@ -10946,21 +8788,21 @@ Their emoji message to you: ` +
 				let i = null;
 				if (s) {
 					const x = controllers[activeInputSource] || controllers.left;
-					(emojiWheel.scale.setScalar(1.05 * wheelOpenScale()), getWorldPosition(x, kidFlatPos));
+					(emojiWheel.scale.setScalar(1.05 * wheelOpenScale()), getWorldPosition(x, scratchPos));
 					const M = new Vector3(0, 0, -1).applyQuaternion(x.getWorldQuaternion(new Quaternion()));
 					(wheelAnchorPos
-						.copy(kidFlatPos)
+						.copy(scratchPos)
 						.addScaledVector(M, 0.14)
 						.add(new Vector3(0, 0.12, 0)),
 						emojiWheel.position.copy(wheelAnchorPos).add(wheelSpawnOffset),
-						emojiWheel.lookAt(getWorldPosition(camera, toKidFlat)));
+						emojiWheel.lookAt(getWorldPosition(camera, scratchLook)));
 				} else {
 					const x = getViewMetrics();
 					(emojiWheel.scale.setScalar(x.sc * wheelOpenScale()),
 						emojiWheel.position.copy(
 							new Vector3(x.xOff, x.yOff, -wheelViewDistance)
 								.applyQuaternion(camera.getWorldQuaternion(new Quaternion()))
-								.add(getWorldPosition(camera, kidFlatPos)),
+								.add(getWorldPosition(camera, scratchPos)),
 						),
 						emojiWheel.quaternion.copy(camera.getWorldQuaternion(new Quaternion())),
 						(i = new Vector2(
@@ -10971,9 +8813,9 @@ Their emoji message to you: ` +
 				emojiWheel.updateMatrixWorld(!0);
 				const c = activeInputSource === "left" ? "right" : "left";
 				if (s) {
-					(emojiWheel.getWorldDirection(kidBallWorldPos),
-						wheelPlane.setFromNormalAndCoplanarPoint(kidBallWorldPos, emojiWheel.position));
-					const x = getWorldPosition(controllers[c], kidFlatPos),
+					(emojiWheel.getWorldDirection(scratchWorld),
+						wheelPlane.setFromNormalAndCoplanarPoint(scratchWorld, emojiWheel.position));
+					const x = getWorldPosition(controllers[c], scratchPos),
 						M = new Vector3(0, 0, -1).applyQuaternion(
 							controllers[c].getWorldQuaternion(new Quaternion()),
 						);
@@ -11079,7 +8921,7 @@ Their emoji message to you: ` +
 						wheelSpawnOffset.length() > 1.4 && wheelSpawnOffset.setLength(1.4),
 						emojiWheel.position.copy(wheelAnchorPos).add(wheelSpawnOffset));
 					{
-						const x = getWorldPosition(camera, toKidFlat),
+						const x = getWorldPosition(camera, scratchLook),
 							M = emojiWheel.position.clone().sub(x),
 							S = M.length();
 						(S > 1.5 || S < 0.4) &&
@@ -11276,7 +9118,7 @@ Their emoji message to you: ` +
 						h = controllers[c],
 						u = s ? l[c] : null;
 					if (((d.visible = !1), h && u && i.indexOf(u.userData.btn) >= 0)) {
-						const b = getWorldPosition(h, kidFlatPos).clone(),
+						const b = getWorldPosition(h, scratchPos).clone(),
 							f = new Vector3(0, 0, -1).applyQuaternion(h.getWorldQuaternion(new Quaternion())),
 							w = u.getWorldPosition(new Vector3());
 						(d.position.copy(b).addScaledVector(f, Math.max(0.05, w.clone().sub(b).dot(f) - 0.03)),
@@ -11286,21 +9128,12 @@ Their emoji message to you: ` +
 				}
 			}
 			updateSpark(n, o);
-			try {
-				updateKidSafely(n, o);
-			} catch (i) {
-				updateKidSafely.w || ((updateKidSafely.w = 1), console.warn("[spark child]", i));
-			}
-			try {
-				updatePlayerFace(n, o);
-			} catch (i) {
-				updatePlayerFace.w || ((updatePlayerFace.w = 1), console.warn("[face]", i));
-			}
+			try { updatePinchReticles(o); } catch {}
 			{
 				const i =
 					pendingRequests > 0 && !["orb", "orbthink", "emerge", "orbfade"].includes(spark.mode);
 				if ((($a.visible = i), i)) {
-					const c = getWorldPosition(camera, kidFlatPos);
+					const c = getWorldPosition(camera, scratchPos);
 					let d = 0;
 					for (let h = flyingEmojiMessages.length - 1; h >= 0; h--) {
 						const u = flyingEmojiMessages[h];
@@ -11316,17 +9149,17 @@ Their emoji message to you: ` +
 				const i = new Vector3();
 				(camera.getWorldDirection(i),
 					statusPanel.position
-						.copy(getWorldPosition(camera, kidFlatPos))
+						.copy(getWorldPosition(camera, scratchPos))
 						.addScaledVector(i, 0.95)
 						.add(new Vector3(0, 0.08, 0)),
-					statusPanel.lookAt(getWorldPosition(camera, toKidFlat)));
+					statusPanel.lookAt(getWorldPosition(camera, scratchLook)));
 				const c = s
-					? getWorldPosition(controllers[voiceHand === "left" ? "right" : "left"], kidBallWorldPos)
+					? getWorldPosition(controllers[voiceHand === "left" ? "right" : "left"], scratchWorld)
 					: null;
 				c && c.distanceTo(statusPanel.position) < 0.22 && cancelCaptureIfActive();
 			}
 			{
-				const i = getWorldPosition(camera, kidFlatPos);
+				const i = getWorldPosition(camera, scratchPos);
 				for (let c = flyingEmojiMessages.length - 1; c >= 0; c--) {
 					const d = flyingEmojiMessages[c],
 						h = performance.now() - d.start;
@@ -11345,11 +9178,11 @@ Their emoji message to you: ` +
 							(u += Math.ceil(flyingEmojiMessages[f].n / 4) * emojiGridSpacing + 0.05);
 					((d.yOff += (u - d.yOff) * Math.min(1, 6 * n)),
 						d.anchor
-							? (d.anchor.getWorldPosition(kidBallWorldPos),
+							? (d.anchor.getWorldPosition(scratchWorld),
 								d.g.position.set(
-									kidBallWorldPos.x,
-									kidBallWorldPos.y + 0.32 + d.yOff,
-									kidBallWorldPos.z,
+									scratchWorld.x,
+									scratchWorld.y + 0.32 + d.yOff,
+									scratchWorld.z,
 								))
 							: d.g.position.set(i.x, bodyTopY + 0.36 + d.yOff, i.z));
 					const b = MathUtils.clamp((d.life - h) / d.fade, 0, 1);
@@ -11375,7 +9208,8 @@ Their emoji message to you: ` +
 				try {
 					arMode
 						? ((c = captureArPassthroughFrame() || captureVideoFrame()),
-							c || console.warn("[scene shot] AR: no camera frame available"))
+							(semanticFallbackUsed = !c),
+							c || ((c = renderSemanticSchematic()), console.warn("[scene shot] AR: camera blocked, using semantic room schematic")))
 						: (c = renderSceneSnapshot());
 				} catch (d) {
 					console.warn("[scene shot]", d);
@@ -11385,7 +9219,47 @@ Their emoji message to you: ` +
 			renderer.render(scene, camera);
 		});
 	}
-	let pendingSnapshot = null;
+	let pendingSnapshot = null,
+		semanticFallbackUsed = !1;
+	const SEMANTIC_SCENE_NOTE =
+		"Attached is a 3D semantic layout (top-down schematic) of the player's real room (walls, tables, furniture markers, and virtual companions detected via Quest Scene API). It is NOT a camera photo. Use it only as spatial context (what furniture is where, the player's facing direction); answer the question itself directly, never describe the schematic.";
+	function renderSemanticSchematic() {
+		const W = 1024, H = 768, cv = document.createElement("canvas");
+		cv.width = W; cv.height = H;
+		const g = cv.getContext("2d"), b = roomBounds;
+		const pad = 60, rw = Math.max(1, b.x1 - b.x0), rd = Math.max(1, b.z1 - b.z0),
+			sc = Math.min((W - 2 * pad) / rw, (H - 2 * pad) / rd),
+			ox = (W - rw * sc) / 2, oz = (H - rd * sc) / 2,
+			X = (x) => ox + (x - b.x0) * sc, Z = (z) => oz + (z - b.z0) * sc;
+		g.fillStyle = "#101820"; g.fillRect(0, 0, W, H);
+		g.fillStyle = "#1d2a38"; g.fillRect(X(b.x0), Z(b.z0), rw * sc, rd * sc);
+		g.strokeStyle = "#e8eef5"; g.lineWidth = 6; g.strokeRect(X(b.x0), Z(b.z0), rw * sc, rd * sc);
+		g.font = "20px system-ui"; g.textBaseline = "middle"; g.textAlign = "center";
+		const col = { table: "#8d6e4a", couch: "#5c7bc0", bed: "#8e5ea8", storage: "#b08d68", door: "#6ea86e", window: "#8fd0ff" };
+		for (const f of b.feats || []) {
+			g.fillStyle = g.strokeStyle = col[f.k] || "#999";
+			if (f.x0 != null) {
+				g.globalAlpha = 0.8; g.fillRect(X(f.x0), Z(f.z0), (f.x1 - f.x0) * sc, (f.z1 - f.z0) * sc); g.globalAlpha = 1;
+				g.fillStyle = "#fff"; g.fillText(f.k + " " + f.y.toFixed(1) + "m", X((f.x0 + f.x1) / 2), Z((f.z0 + f.z1) / 2));
+			} else {
+				g.lineWidth = 10; g.beginPath(); g.moveTo(X(f.ax), Z(f.az)); g.lineTo(X(f.bx), Z(f.bz)); g.stroke();
+				g.fillStyle = "#fff"; g.fillText(f.k, X((f.ax + f.bx) / 2), Z((f.az + f.bz) / 2) - 16);
+			}
+		}
+		const dot = (p, c, label, r) => {
+			g.fillStyle = c; g.beginPath(); g.arc(X(p.x), Z(p.z), r, 0, 7); g.fill();
+			g.fillStyle = "#fff"; g.fillText(label, X(p.x), Z(p.z) - r - 12);
+		};
+		const hp = getWorldPosition(camera, new Vector3()), fw = new Vector3();
+		camera.getWorldDirection(fw);
+		dot(hp, "#2ecc71", "player", 14);
+		g.strokeStyle = "#2ecc71"; g.lineWidth = 5; g.beginPath();
+		g.moveTo(X(hp.x), Z(hp.z)); g.lineTo(X(hp.x) + fw.x * 70, Z(hp.z) + fw.z * 70); g.stroke();
+		if (sparkOrb.visible || sparkFairy.visible) dot((sparkFairy.visible ? sparkFairy : sparkOrb).position, "#ffd84a", "Spark", 9);
+		g.fillStyle = "#cfd8e3"; g.textAlign = "left";
+		g.fillText("Top-down room layout (" + rw.toFixed(1) + " x " + rd.toFixed(1) + " m, ceiling " + b.h.toFixed(1) + " m). Green arrow = where the player faces.", 20, 28);
+		return cv.toDataURL("image/jpeg", 0.8);
+	}
 	const snapshotWidth = 1024,
 		snapshotHeight = 768,
 		snapshotTarget = new THREE.WebGLRenderTarget(snapshotWidth, snapshotHeight, {
