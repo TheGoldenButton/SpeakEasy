@@ -66,6 +66,7 @@ body.touch-on #touchUI{display:block}
 #tHint{position:fixed;left:50%;transform:translateX(-50%);bottom:max(6px,env(safe-area-inset-bottom));z-index:25;font-size:11px;color:#444;background:#fffc;border-radius:8px;padding:2px 8px;pointer-events:none}
 #skyQ{width:100%;box-sizing:border-box;padding:9px;border:1px solid #bbb;border-radius:9px;font-size:13px;margin:6px 0}#skyGo,#skyClear{padding:8px 12px;border-radius:9px;border:0;background:#111;color:#fff;cursor:pointer;font-weight:700}#skyClear{background:#eee;color:#111}
 #err{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:60;background:#b00020;color:#fff;padding:10px 14px;border-radius:10px;display:none;max-width:90vw}
+#homeBtn{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:21;display:none;padding:12px 18px;border-radius:999px;border:0;background:#0a7a42;color:#fff;font-weight:700;cursor:pointer}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
@@ -78,11 +79,14 @@ body.touch-on #touchUI{display:block}
 <p>Press the <b>index trigger</b> on either controller (desktop: press <b>L</b>) to open the wheel — it opens in that hand and stays open; press again to close it and send. The golden ball rests in the centre. Point your <i>other</i> controller at it, hold its trigger (desktop: mouse button) and drag toward an emoji on the rim until the ball turns green, then <b>let go</b> to pick. Let go anywhere else and it returns to the centre. Closing the wheel sends your picks above your head for a few seconds; you can see it in the mirror.</p>
 </details>
 <details name="hudsec"><summary>🧚 Ask Spark</summary>
-<p>With the wheel <b>closed</b>, <b>hold the index trigger on its own</b> (desktop: hold <b>L</b>), speak your question, then let go. A quick tap still opens the wheel. A ball of light forms while you speak, then the fairy emerges and answers in emoji. It does <i>not</i> translate — it answers, using what you are looking at (in AR, the headset-camera view).</p>
-</details><details name="hudsec"><summary>🌌 Ember sky text</summary>
-<p>Ask an <b>information question</b> — e.g. <i>“the connection between consciousness and quantum theory”</i> — and Muse Ember (the fairy) gives an <b>emoji sequence above her head</b> while projecting the <b>relevant found text into the sky</b> as a slow Star Wars-style crawl. <b>Click a cyan source link</b> in the sky to open it in a new tab. <b>Drag the sky</b> (mouse, touch, or a controller trigger) to move the whole text around the sky. Mouse-wheel over the sky scrolls it. The full sky text and its source links stay in 🌲 history for review.</p>
-<input id="skyQ" type="text" autocomplete="off" placeholder="Ask about something… e.g. the connection between consciousness and quantum theory" aria-label="Sky information query">
-<div><button id="skyGo">🌌 Ask Ember &amp; project</button> <button id="skyClear">Clear sky</button></div>
+<p>With the wheel <b>closed</b>, <b>hold the index trigger on its own</b> (desktop: hold <b>L</b>), speak your question, then let go. A quick tap still opens the wheel. A ball of light forms while you speak, then Ember hears you and acts on it — she can build, change the world, answer, or just play (see the Ember agent section). With no API key she only understands a few simple build requests.</p>
+</details><details name="hudsec"><summary>🧚 Ember the agent fairy</summary>
+<p>Ember is a living agent. Ask or tell her <i>anything</i> (hold the trigger / <b>L</b> and speak, or type below) and she will decide what to do: build structures, animate and recolor things, change the sky and lighting, play sounds, move the person, remember things, or write her own code. She can take pictures of the scene from any angle (front, top, your own view…) to check how things look, and place or smoothly move objects precisely. She shows her thinking as the glowing orb and answers with an emoji bubble; nothing is projected in the sky. She only acts when you ask — or when you tell her to repeat something (e.g. <i>“every 5 minutes, add a new star to the sky”</i>). Everything she builds is saved in this browser.</p>
+<input id="skyQ" style="display:none">
+<input id="agentQ" type="text" autocomplete="off" placeholder="e.g. build me a glowing castle with a moat" aria-label="Ask Ember" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #bbb;border-radius:9px;font-size:13px;margin:6px 0">
+<div><button id="agentGo" style="padding:8px 12px;border-radius:9px;border:0;background:#111;color:#fff;cursor:pointer;font-weight:700">🧚 Send to Ember</button> <button id="agentClear" style="padding:8px 12px;border-radius:9px;border:0;background:#eee;cursor:pointer">🧹 Reset room</button> <button id="agentForget" style="padding:8px 12px;border-radius:9px;border:0;background:#eee;cursor:pointer">Forget memories</button></div>
+<div id="agentCycles" class="note" style="margin:6px 0 0"></div>
+<button id="agentStopCycles" style="padding:6px 10px;border-radius:9px;border:0;background:#eee;cursor:pointer;margin-top:4px">⏹ Stop all repeating tasks</button>
 </details>
 <details name="hudsec"><summary>🎙️ Translate to emoji</summary>
 <p><b>Hands only:</b> with the wheel closed, <b>pinch both index fingers together and hold</b>. Controllers: hold <b>index + grip</b> together on one controller with the wheel closed (desktop: hold <b>V</b>), or <b>hold the trigger of the wheel hand while the wheel is open</b> (desktop: hold <b>L</b> with the wheel open). Speak, then let go to send. Wave your free hand through the transcript box (desktop: <b>Esc</b>) to cancel.</p>
@@ -99,17 +103,21 @@ body.touch-on #touchUI{display:block}
 <details name="hudsec"><summary>🙂 Your avatar</summary>
 <p>You are a <b>stick man</b> sized to <b>your real height</b> in the headset: start sitting and he starts small at that sitting height; stand up and he grows to your standing height at once. He only shrinks again if you squat / stay sat down well below your height for <b>more than 3 seconds</b> — a quick duck or bend keeps your full height. Its mouth is a <b>line</b> that turns into an <b>O</b> while you speak (microphone lip-sync; headsets with WebXR face tracking drive it directly). Arms follow your controllers or hands. Its <b>face shows the emotion of the emoji you send</b> — smiles, frowns, angry brows, tears, blushing, heart eyes, sunglasses and more — stepping through your message in time with the symbols, then relaxing. Sound effects can be switched off and on in settings.</p>
 </details>
+<details name="hudsec"><summary>🎮 Games, portals &amp; grabbing</summary><p>Ask Ember for a game (tic-tac-toe, ring toss, pong…), a portal to a new world, or things to play with. <b>Grab:</b> VR – squeeze the grip near an object, or point at it and pull the trigger to pull it into your hand; release to throw/drop. Desktop/touch – drag it. <b>Tap</b> buttons and portals by pointing and pressing the trigger / clicking. Walk through a portal to travel; the 🏠 button (or the exit portal) brings you home. Ember takes its turns in games automatically after your moves (needs the API key or proxy).</p></details>
 <div id="seq"></div>
 <div id="status">Drift around the white platform as it flies through space, and check yourself out in the mirror. WASD / left stick moves, drag looks around.</div>
 </div>
 <button id="arBtn" title="AR mode — use headset cameras (passthrough) instead of the VR room">📷 AR Mode</button>
 <button id="vrBtn">Enter VR</button>
+<button id="homeBtn">🏠 Home</button>
 <div id="err"></div>
 <div id="modal"><div class="card"><h2 style="margin:0">Settings — Meta / Muse APIs</h2><p class="note">One Meta API key is used for both Muse Voice Transcribe and Muse Spark. It is stored only in this browser (<code>localStorage</code>), never in this file. With a key: speech goes to Muse Voice Transcribe, the text goes to Muse Spark. Without a key, voice falls back to the headset's built-in speech recognition (the same engine as the keyboard's mic button, started automatically with no keyboard popping up) and Spark falls back to a small local phrase translator.</p>
 <label>Meta API key (Muse Voice Transcribe + Muse Spark)</label><input id="kMeta" type="password" autocomplete="off" placeholder="Paste Meta API key"> <label>Muse Voice Transcribe endpoint</label><input id="kTransUrl"> <label>Muse Spark endpoint</label><input id="kSparkUrl"> <label>Muse Spark model</label><input id="kSparkModel"> <label style="display:flex;gap:8px;align-items:center;font-weight:600"><input id="kSfx" type="checkbox" style="width:auto"> Sound effects (emoji notes, wheel shimmer, fairy chime)</label><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input id="kCloud" type="checkbox" style="width:auto"> Allow cloud voice / Spark (sends mic audio and camera or scene images)</label><div><button id="saveSet">Save</button>
 <button id="closeSet" class="ghost">Close</button>
 <button id="clearSet" class="ghost">Clear key</button>
+<button id="resetRoom" class="ghost">🧹 Reset room</button>
 </div>
+<p class="note"><b>Reset room</b> wipes everything: all objects, portals and worlds Ember made, game state, Ember\u2019s memory, repeating tasks and conversation, and restores the original sky, lighting, gravity and your position (tap twice to confirm).</p>
 <p class="note">Spark receives one message: for translation, a short instruction to translate what you said into an emoji sequence of 12 or less; for Ask Spark (trigger-hold, wheel closed), an instruction to actually answer your question helpfully as a separate assistant, using the scene image for context. Lewd or hateful content is not translated.</p>
 </div>
 </div>
@@ -246,8 +254,8 @@ depthWrite:!1,fog:!1}));return g.userData.base=scale,g.scale.setScalar(scale),g
 sunLight.shadow.radius=3;scene.add(sunLight,sunLight.target);sunLight.position.copy(sunDir).multiplyScalar(40)
 ;const floorCol=new THREE.Color(14474458),bounceCol=floorCol.clone().multiply(new THREE.Color(16774880)),albedo=(floorCol.r+floorCol.g+floorCol.b)/3,bounce=new THREE.HemisphereLight(3166348,bounceCol,6*sunDir.y*albedo*.9)
 ;scene.add(bounce);spaceBackdrop.sun={glowInner:glowInner,glowOuter:glowOuter,group:sunGroup,light:sunLight,dir:sunDir,dist:SUN_DIST,bounce:bounce}}}
-function updateSpaceBackdrop(e,t){if(!spaceBackdrop.space)return;const n=!arMode;if(spaceBackdrop.space.visible=n,
-spaceBackdrop.raft&&(spaceBackdrop.raft.visible=n),spaceBackdrop.sun&&(spaceBackdrop.sun.group.visible=n,spaceBackdrop.sun.bounce.visible=n),n&&e){
+function updateSpaceBackdrop(e,t){if(!spaceBackdrop.space)return;const n=!arMode&&!agent.alt;if(spaceBackdrop.space.visible=n,
+spaceBackdrop.raft&&(spaceBackdrop.raft.visible=n),spaceBackdrop.sun&&(spaceBackdrop.sun.group.visible=n,spaceBackdrop.sun.bounce.visible=!arMode),n&&e){
 for(const o of spaceBackdrop.layers)o.o.rotation.y+=o.rot*e,o.mat.opacity=.82+.16*Math.sin(.7*t+o.ph)
 ;for(const o of spaceBackdrop.planets)o.o.rotation.y+=o.spin*e;if(spaceBackdrop.sun){const u=spaceBackdrop.sun
 ;u.glowInner.scale.setScalar(u.glowInner.userData.base*(1+.04*Math.sin(1.3*t))),u.glowOuter.scale.setScalar(u.glowOuter.userData.base*(1+.06*Math.sin(.8*t+1)))}
@@ -403,7 +411,7 @@ cameraForward.normalize(),cameraRight.crossVectors(cameraForward,unitYAxis);let 
 }else u>.1&&f<-.45&&Math.abs(f)>1.2*M&&S<.35?a=Math.max(a,Math.min(2.4,.7+1.1*-f)):u>.1&&f>.6&&Math.abs(f)>1.2*M&&S>.5&&(a=Math.min(a,-Math.min(1.8,.5+.8*f)))}
 2===s&&playerRig.position.y<=.02&&0===jumpVelocity?Hi=!0:(0!==a?moveVelocity.lerp(cameraForward.clone().multiplyScalar(a),Math.min(1,9*e)):moveVelocity.multiplyScalar(Math.exp(-3.5*e)),
 verticalVelocity=0!==r?verticalVelocity+(r-verticalVelocity)*Math.min(1,12*e):verticalVelocity*Math.exp(-6*e),
-!o&&moveVelocity.lengthSq()>4e-4&&(playerRig.position.addScaledVector(moveVelocity,e),arMode?roomPlanes.length&&(getWorldPosition(camera,headPos),
+!o&&moveVelocity.lengthSq()>4e-4&&(playerRig.position.addScaledVector(moveVelocity,e*agent.phys.speed),arMode?roomPlanes.length&&(getWorldPosition(camera,headPos),
 arCorrectedPos.copy(headPos),clampToRoomPlanes(arCorrectedPos,.25),playerRig.position.x+=arCorrectedPos.x-headPos.x,
 playerRig.position.z+=arCorrectedPos.z-headPos.z):keepPlayerInRoom(.4)),!o&&Math.abs(verticalVelocity)>.01&&snapTurn(verticalVelocity*e))}
 function readHandJoints(e){try{const t=handTrackingFrame,n=renderer.xr.getReferenceSpace();if(!t||!n||!e.hand)return null;const o=w=>{
@@ -604,7 +612,7 @@ i.font="700 "+Math.round(Math.min(.4*s,48.9))+'px "Apple Color Emoji","Segoe UI 
 i.textBaseline="middle",i.fillText(u,256,s/2+4)};c(t);const d=new CanvasTexture(l);d.colorSpace=SRGBColorSpace,d.anisotropy=maxAnisotropy
 ;const h=new Mesh(new PlaneGeometry(a,r),new MeshBasicMaterial({map:d,transparent:!0,depthTest:!1}));return h.position.set(n,o,-.94),h.renderOrder=1e3,
 h.visible=!1,h.userData.btn=e,h.userData.hit=[a/2+.01,r/2+.01],h.userData.hs=1.08,h.userData.setLabel=u=>{c(u),d.needsUpdate=!0},toolbar.add(h),h}
-const settingsButtons=[createPanelButton("editKey","✏️ API key",-.33,-.14,.31,.1),createPanelButton("clearKey","🗑️ Clear key",0,-.14,.31,.1),createPanelButton("toggleSfx",sfxEnabled?"🔊 Sound: On":"🔇 Sound: Off",.33,-.14,.31,.1)]
+const settingsButtons=[createPanelButton("editKey","✏️ API key",-.33,-.14,.31,.1),createPanelButton("clearKey","🗑️ Clear key",0,-.14,.31,.1),createPanelButton("toggleSfx",sfxEnabled?"🔊 Sound: On":"🔇 Sound: Off",.33,-.14,.31,.1),createPanelButton("resetRoom","🧹 Reset room",0,-.27,.42,.1)]
 ;for(let e=0;e<tipsSections.length;e++){const t=new Mesh(new PlaneGeometry(.94,.056),new MeshBasicMaterial({visible:!1}));t.position.set(0,.02,-.94),
 t.visible=!1,t.userData.btn="help:"+e,t.userData.hit=[.47,.028],t.userData.hs=1,toolbar.add(t),helpSectionButtons.push(t)}redrawTipsPanel()
 ;const allButtons=[...toolbarButtons,...settingsButtons,...helpSectionButtons];function setMirrorEnabled(e){mirrorOn=!!e;try{
@@ -684,7 +692,7 @@ i=JSON.parse(l)}catch{}const c=i?extractChatText(i):l;const d=c.match(/ANSWER:\s
 why:""};n="Spark replied with no emojis. Raw: "+l.slice(0,200)}else n="HTTP "+s.status+" from Spark: "+l.slice(0,160)}catch(o){
 n="could not reach Spark ("+o.message+")"
 }else n="cloud Spark is off — no API key is saved and cloud features were not allowed. Add your Meta API key in ⚙ settings (that alone enables direct Spark calls), or tick “Allow cloud voice / Spark” there to use the proxy."
-;return console.warn("[Muse Spark Ask] fallback:",n),{seq:localPhraseTranslate(e),via:"local",why:n}}async function askSpark(e,t){if(isSkyInfoQuery(e))return askSparkSky(e,t);
+;return console.warn("[Muse Spark Ask] fallback:",n),{seq:localPhraseTranslate(e),via:"local",why:n}}async function askSpark(e,t){if(await agentAsk(e,t))return;
 arMode&&!t&&setStatus("📷 Note: Quest Horizon OS blocks raw passthrough camera feeds in WebXR. Spark will answer from speech.");let n;sparkMarkThinking(),
 setStatus('Asking Spark 🧚… "'+e+'"'+(arMode&&t?" (with camera view)":"")),pendingRequests++;try{n=await requestSparkAnswer(e,t)}finally{pendingRequests--}
 "local"===n.via?(/^no Meta API key/.test(n.why)||showError("Spark Ask failed, so the local emoji translator was used. Reason: "+n.why),
@@ -730,11 +738,11 @@ side:DoubleSide}));w.renderOrder=-10,w.frustumCulled=!1,planeGroup.add(w),l={mes
 l.mesh.position.set(i.transform.position.x,i.transform.position.y,i.transform.position.z),
 l.mesh.quaternion.set(i.transform.orientation.x,i.transform.orientation.y,i.transform.orientation.z,i.transform.orientation.w)})}}
 function clampToRoomBounds(e,t){let n=!1;const o=!arMode||roomBounds.real;for(let a=0;a<3;a++){let r=!1;if(o){
-const s=Math.max(roomBounds.x0+t,Math.min(roomBounds.x1-t,e.x)),l=Math.max(roomBounds.z0+t,Math.min(roomBounds.z1-t,e.z));(s!==e.x||l!==e.z)&&(e.x=s,e.z=l,r=!0)
-}if(!arMode||roomBounds.real)for(const s of roomBounds.feats){if(null==s.x0||"door"===s.k||"window"===s.k)continue;const l=s.x0-t,i=s.x1+t,c=s.z0-t,d=s.z1+t
+const s=Math.max(agB().x0+t,Math.min(agB().x1-t,e.x)),l=Math.max(agB().z0+t,Math.min(agB().z1-t,e.z));(s!==e.x||l!==e.z)&&(e.x=s,e.z=l,r=!0)
+}if(!arMode||roomBounds.real)for(const s of agent.alt?[]:roomBounds.feats){if(null==s.x0||"door"===s.k||"window"===s.k)continue;const l=s.x0-t,i=s.x1+t,c=s.z0-t,d=s.z1+t
 ;if(e.x<=l||e.x>=i||e.z<=c||e.z>=d)continue;const h=e.x-l,u=i-e.x,b=e.z-c,f=d-e.z,w=Math.min(h,u,b,f);w===h?e.x=l:w===u?e.x=i:e.z=w===b?c:d,r=!0}if(!r)break
 ;n=!0}return n}function keepPlayerInRoom(e){const t=keepPlayerInRoom.v||=new Vector3;getWorldPosition(camera,t)
-;const n=MathUtils.clamp(t.x,roomBounds.x0+e,roomBounds.x1-e),o=MathUtils.clamp(t.z,roomBounds.z0+e,roomBounds.z1-e);playerRig.position.x+=n-t.x,
+;const n=MathUtils.clamp(t.x,agB().x0+e,agB().x1-e),o=MathUtils.clamp(t.z,agB().z0+e,agB().z1-e);playerRig.position.x+=n-t.x,
 playerRig.position.z+=o-t.z}function clampToRoomPlanes(e,t){if(!arMode)return!1;if(!roomPlanes.length)return clampToRoomBounds(e,t);let n=!1
 ;for(let o=0;o<3;o++){let a=!1;for(const r of roomPlanes){const s=r.mesh;s.getWorldPosition(planeCenter),
 planeNormal.set(0,1,0).transformDirection(s.matrixWorld),planeNormal.y=0;const l=planeNormal.length();if(l<.3)continue;planeNormal.divideScalar(l),
@@ -777,12 +785,12 @@ u.light.position.copy(u.light.target.position).addScaledVector(u.dir,40),u.light
 camera.getWorldDirection(flatForward),flatForward.y=0,flatForward.lengthSq()<.04?flatForward.copy(lastForward):(flatForward.normalize(),
 lastForward.copy(flatForward)),getWorldPosition(camera,cameraPos);const a=flatForward.x,r=flatForward.z;let s=0;if(!arMode){const l=i=>{
 const c=Math.cos(i),d=Math.sin(i),h=a*c-r*d,u=a*d+r*c,b=Math.hypot(h,u)||1,f=cameraPos.x+h/b*e*Math.hypot(a,r),w=cameraPos.z+u/b*e*Math.hypot(a,r)
-;return f>=roomBounds.x0+.5&&f<=roomBounds.x1-.5&&w>=roomBounds.z0+.5&&w<=roomBounds.z1-.5};for(const i of[0,.6,-.6,1.2,-1.2,1.9,-1.9,Math.PI])if(l(i)){s=i
+;return f>=agB().x0+.5&&f<=agB().x1-.5&&w>=agB().z0+.5&&w<=agB().z1-.5};for(const i of[0,.6,-.6,1.2,-1.2,1.9,-1.9,Math.PI])if(l(i)){s=i
 ;break}}if(s){const l=Math.cos(s),i=Math.sin(s),c=flatForward.x*i+flatForward.z*l;flatForward.x=flatForward.x*l-flatForward.z*i,flatForward.z=c}
 return flatRight.crossVectors(flatForward,upVector).normalize(),o.copy(cameraPos).addScaledVector(flatForward,e).addScaledVector(flatRight,t),o.y+=n,
 arMode?(clampToRoomPlanes(o,.35),
-keepInLineOfSight(o,0,.35),null!=lowestCeilingY&&(o.y=Math.min(o.y,lowestCeilingY-.25))):(o.x=Math.max(roomBounds.x0+.5,Math.min(roomBounds.x1-.5,o.x)),
-o.z=Math.max(roomBounds.z0+.5,Math.min(roomBounds.z1-.5,o.z))),o.y=Math.max(o.y,.35),o}
+keepInLineOfSight(o,0,.35),null!=lowestCeilingY&&(o.y=Math.min(o.y,lowestCeilingY-.25))):(o.x=Math.max(agB().x0+.5,Math.min(agB().x1-.5,o.x)),
+o.z=Math.max(agB().z0+.5,Math.min(agB().z1-.5,o.z))),o.y=Math.max(o.y,.35),o}
 const occlusionRaycaster=new Raycaster,orbDirection=new Vector3,orbTargetPos=new Vector3,occluderWorldPos=new Vector3;function getOcclusionTargets(){const e=[]
 ;for(const t of roomSurfaces)t.visible&&e.push(t);if(arMode){for(const t of planeMeshes.values())e.push(t.mesh)
 ;for(const t of scanPlaneMeshes.values())t.rc&&e.push(t.mesh)}for(const t of[emojiWheel,statusPanel,toastPanel,helpPanel])t&&t.visible&&e.push(t);return e}
@@ -821,7 +829,7 @@ scene.add(sparkAnswerGroup);let sparkAnswerSprites=[];const sparkOrbPos=new Vect
 ;function keepOrbFromPlayer(e,t){getWorldPosition(camera,cameraPos);let n=e.x-cameraPos.x,o=e.z-cameraPos.z,a=Math.hypot(n,o)
 ;a<.001&&(camera.getWorldDirection(flatForward),n=flatForward.x,o=flatForward.z,a=Math.hypot(n,o)||1);const r=n/a,s=o/a;if(a<1.3){
 const l=Math.min(1,3.5*t)*(1.3-a);e.x+=r*l,e.z+=s*l}else if(a>4){const l=Math.min(1,2*t)*(a-4);e.x-=r*l,e.z-=s*l}
-arMode?clampToRoomPlanes(e,.3):(e.x=Math.max(-4.2,Math.min(4.2,e.x)),e.z=Math.max(-4.2,Math.min(4.2,e.z))),
+arMode?clampToRoomPlanes(e,.3):(e.x=Math.max(agB().x0+.8,Math.min(agB().x1-.8,e.x)),e.z=Math.max(agB().z0+.8,Math.min(agB().z1-.8,e.z))),
 e.y=Math.max(.5,Math.min(e.y,arMode&&null!=lowestCeilingY?lowestCeilingY-.3:3.4))}const orbTargetFlat=new Vector3;function orbFollowStep(e,t,n,o){
 placeOrbPosition(t,orbSlot,n,orbTargetFlat);const a=orbTargetFlat.x-e.x,r=orbTargetFlat.z-e.z,s=Math.hypot(a,r);if(s>.4){const l=Math.min(1,.55*o)*(1-.4/s)
 ;e.x+=a*l,e.z+=r*l}e.y+=(orbTargetFlat.y-e.y)*Math.min(1,.7*o)}function placeSparkOrb(e){getWorldPosition(camera,cameraPos),
@@ -875,6 +883,503 @@ o.frustumCulled=!1,o.onBeforeRender=function(a,r,s){const l=this.parent;tmpWorld
 this.matrixWorld.multiplyMatrices(l.matrixWorld,this.matrix)},sparkAnswerGroup.add(o),sparkAnswerSprites.push(o)}),spark.hasAnswer=!0,chooseOrbSlot(!0),
 ur=performance.now(),["hidden","return","orbfade"].includes(spark.mode)&&(spark.mode="hidden",beginSparkSession()),
 "orb"===spark.mode||"orbthink"===spark.mode?$h():"emerge"!==spark.mode&&(placeSparkOrb(!1),sparkShowAnswer())}
+;/* ===== Ember: the agentic fairy ===== */
+const AG_MAX_OBJECTS=400,AG_MAX_LIGHTS=8,AG_D2R=Math.PI/180;
+const agent={busy:!1,thinking:!1,fast:!1,userWaiting:!1,pending:null,convo:[],objects:new Map,counter:0,lights:0,hooks:[],memory:[],env:{},
+pos:new Vector3(0,1.6,-2),goal:new Vector3(0,1.6,-2),color:new THREE.Color(16771466),scale:1,wanderT:0,inited:!1,voice:!0,schedules:[],schedCheck:0,
+freeAt:performance.now()+3e4,dirty:!1,saveAt:0,bubbleUntil:0,trailT:0,imgs:[],imgDropped:!1,def:null,rig0:null,playerMoved:!1,cancel:!1,gravity:9.8,sun0:null,amb0:null,phys:{gx:0,gz:0,bounce:.55,friction:4,drag:0,ts:1,solid:!1,nofloor:!1,unb:!1,pg:9.8,jump:3.4,speed:1},look:null,space0:null};
+try{agent.voice=localStorage.getItem("museAgentVoice")!=="0";agent.memory=JSON.parse(localStorage.getItem("museAgentMemory")||"[]")||[]}catch{}
+const agentWorld=new Group;scene.add(agentWorld);
+const agentFairy=new Group;agentFairy.frustumCulled=!1;scene.add(agentFairy);
+const agTmp=new Vector3,agCam=new Vector3,agDir=new Vector3,agBubble=new Group;scene.add(agBubble);
+const agGlowTex=(()=>{const c=document.createElement("canvas");c.width=c.height=64;const g=c.getContext("2d"),r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,"rgba(255,255,255,1)");r.addColorStop(.25,"rgba(255,255,255,.55)");r.addColorStop(1,"rgba(255,255,255,0)");g.fillStyle=r;g.fillRect(0,0,64,64);return new CanvasTexture(c)})();
+const agCore=new Mesh(new SphereGeometry(.03,16,12),new MeshBasicMaterial({color:16777215,transparent:!0,opacity:.95,blending:AdditiveBlending,depthWrite:!1,fog:!1}));
+const agGlow=new Sprite(new SpriteMaterial({map:agGlowTex,transparent:!0,opacity:.9,blending:AdditiveBlending,depthWrite:!1,fog:!1}));agGlow.scale.setScalar(.34);
+const agLight=new THREE.PointLight(16771466,1.2,3.5,1.6);
+const agWings=[-1,1].map(s=>{const p=new Group;p.position.set(s*.008,.01,0);const w=new Mesh(new CircleGeometry(.06,20),new MeshBasicMaterial({color:13691135,transparent:!0,opacity:.5,side:DoubleSide,blending:AdditiveBlending,depthWrite:!1,fog:!1}));w.scale.set(.8,1.7,1);w.position.set(s*.05,.02,0);w.rotation.z=-s*.5;p.add(w);agentFairy.add(p);return p});
+agentFairy.visible=!1;
+const AG_TRAIL=48,agTrailArr=new Float32Array(3*AG_TRAIL),agTrailGeo=new BufferGeometry;agTrailGeo.setAttribute("position",new BufferAttribute(agTrailArr,3));
+const agTrail=new Points(agTrailGeo,new PointsMaterial({color:16771466,size:.016,transparent:!0,opacity:.8,blending:AdditiveBlending,depthWrite:!1,sizeAttenuation:!0,map:agGlowTex,fog:!1}));agTrail.visible=!1;
+const agNum=(v,d,lo,hi)=>{v=Number(v);isFinite(v)||(v=d);return Math.min(hi,Math.max(lo,v))};
+const agVec=(a,d,lim)=>{const o=Array.isArray(a)?a:[];return[agNum(o[0],d[0],-lim,lim),agNum(o[1],d[1],-lim,lim),agNum(o[2],d[2],-lim,lim)]};
+const agColor=(c,fb)=>{try{const k=new THREE.Color;k.set(c);return k}catch{return new THREE.Color(fb||16777215)}};
+const agSleep=ms=>new Promise(r=>setTimeout(r,ms));
+function agFront(d){getWorldPosition(camera,agCam);camera.getWorldDirection(agDir);agDir.y=0;if(agDir.lengthSq()<1e-4)agDir.set(0,0,-1);agDir.normalize();return[+(agCam.x+agDir.x*d).toFixed(2),0,+(agCam.z+agDir.z*d).toFixed(2)]}
+const agGeo={};
+function agGeometry(s){if(agGeo[s])return agGeo[s];let g;switch(s){case"sphere":g=new THREE.SphereGeometry(.5,28,18);break;case"cylinder":g=new THREE.CylinderGeometry(.5,.5,1,28);break;case"cone":g=new THREE.ConeGeometry(.5,1,28);break;case"torus":g=new THREE.TorusGeometry(.5,.15,14,36);break;case"ring":g=new THREE.RingGeometry(.3,.5,40);break;case"plane":g=new THREE.PlaneGeometry(1,1);break;case"capsule":g=new THREE.CapsuleGeometry(.25,.5,6,16);break;case"octahedron":g=new THREE.OctahedronGeometry(.5);break;case"icosahedron":g=new THREE.IcosahedronGeometry(.5);break;case"dodecahedron":g=new THREE.DodecahedronGeometry(.5);break;case"tetrahedron":g=new THREE.TetrahedronGeometry(.5);break;case"knot":g=new THREE.TorusKnotGeometry(.4,.12,100,12);break;default:g=new THREE.BoxGeometry(1,1,1)}return agGeo[s]=g}
+const AG_SHAPES=["box","sphere","cylinder","cone","torus","ring","plane","capsule","octahedron","icosahedron","dodecahedron","tetrahedron","knot","light","text","portal"];
+function agApply(o,spec,isNew){const u=o.userData,sp=u.spec;
+for(const k of["pos","size","rot","color","emissive","emissiveColor","metal","rough","opacity","wire","anim","physics","gscale","bounce","drag","intensity","distance","grab","on","tell","text","bg","to","spawn","nearDist"])spec[k]!==void 0&&(sp[k]=spec[k]);
+if(spec.pos!==void 0){const p=agVec(spec.pos,[0,0,0],120);o.position.set(p[0],p[1],p[2]);u.y0=p[1]}
+if(spec.rot!==void 0){const r=agVec(spec.rot,[0,0,0],3600);o.rotation.set(r[0]*AG_D2R,r[1]*AG_D2R,r[2]*AG_D2R)}
+if(spec.size!==void 0||isNew){const s=spec.size;let v;if(Array.isArray(s))v=[agNum(s[0],.5,.005,100),agNum(s[1]??s[0],.5,.005,100),agNum(s[2]??s[0],.5,.005,100)];else{const n=agNum(s,u.light?.15:.5,.005,100);v=[n,n,n]}u.base=v;sp.size=v;isNew?o.scale.setScalar(.001):o.scale.set(v[0],v[1],v[2])}
+if(u.light){const col=agColor(sp.color!==void 0?sp.color:"#ffffff");u.light.color.copy(col);u.orb.material.color.copy(col);u.light.intensity=agNum(sp.intensity,2,0,20);u.light.distance=agNum(sp.distance,6,0,60)}
+else if(u.shape==="text"||u.shape==="portal")agApplyX(o,sp);else{const m=o.material;if(sp.color!==void 0)m.color.copy(agColor(sp.color));else if(isNew)m.color.set(14737632);
+if(sp.emissive!==void 0){m.emissive.copy(sp.emissiveColor!==void 0?agColor(sp.emissiveColor):m.color);m.emissiveIntensity=agNum(sp.emissive,0,0,5)}
+if(sp.metal!==void 0)m.metalness=agNum(sp.metal,.1,0,1);if(sp.rough!==void 0)m.roughness=agNum(sp.rough,.6,0,1);
+if(sp.opacity!==void 0){const op=agNum(sp.opacity,1,0,1);m.opacity=op;m.transparent=op<1;m.depthWrite=op>=.95}
+if(sp.wire!==void 0)m.wireframe=!!sp.wire;
+if(u.shape==="plane"||u.shape==="ring")m.side=DoubleSide;m.needsUpdate=!0}
+if(spec.vel!==void 0){const v=agVec(spec.vel,[0,0,0],60);u.vx=v[0];u.vy=v[1];u.vz=v[2]}
+if(spec.anim!==void 0)u.y0=o.position.y;
+agent.dirty=!0}
+function agFocus(o){try{o.getWorldPosition(agTmp);getWorldPosition(camera,agCam);const dx=agCam.x-agTmp.x,dz=agCam.z-agTmp.z,l=Math.hypot(dx,dz)||1;agent.goal.set(agTmp.x+dx/l*.7,agTmp.y+.55,agTmp.z+dz/l*.7);agent.fast=!0}catch{}}
+function agSpawn(spec){spec=spec||{};const id=String(spec.id||"obj"+ ++agent.counter).slice(0,40);
+if(agent.objects.has(id))return agModify({...spec,id}),id;
+if(agent.objects.size>=AG_MAX_OBJECTS)throw new Error("object limit "+AG_MAX_OBJECTS+" reached — delete some first");
+let shape=String(spec.shape||"box");AG_SHAPES.includes(shape)||(shape="box");let o;
+if(shape==="light"){if(agent.lights>=AG_MAX_LIGHTS)throw new Error("light limit "+AG_MAX_LIGHTS+" reached");o=new Group;const pl=new THREE.PointLight(16777215,2,6,1.6),orb=new Mesh(agGeometry("sphere"),new MeshBasicMaterial({color:16777215,fog:!1}));o.add(pl,orb);o.userData.light=pl;o.userData.orb=orb;agent.lights++}
+else o=agMakeExtra(shape)||new Mesh(agGeometry(shape),new MeshStandardMaterial({roughness:.6,metalness:.1}));
+const u=o.userData;u.agentId=id;u.shape=shape;u.spec={};u.spawnT=spec._silent?1:0;u.vx=u.vy=u.vz=0;u.parentId=null;
+let par=agWorldOf(spec.world||agent.buildWorld||agent.world).group;if(spec.parent&&agent.objects.has(String(spec.parent))){par=agent.objects.get(String(spec.parent));u.parentId=String(spec.parent)}u.world=par.userData.world;
+if(spec.pos===void 0){const f=agFront(2.5);spec={...spec,pos:[f[0],0,f[2]]};spec.size===void 0&&(spec.size=.5);const sz=Array.isArray(spec.size)?spec.size[1]??spec.size[0]:spec.size;spec.pos[1]=(Number(sz)||.5)/2}
+par.add(o);agent.objects.set(id,o);agApply(o,spec,!0);if(spec._silent)o.scale.set(u.base[0],u.base[1],u.base[2]);
+else{agFocus(o);const nw=performance.now();if(nw-(agent.lastBurst||0)>300){agent.lastBurst=nw;try{sparkFairyEffects.burst(agTmp.clone(),.5)}catch{}agBlip(520+(agent.counter*53)%500)}}return id}
+function agModify(spec){const o=agent.objects.get(String(spec.id));if(!o)throw new Error("no object with id "+spec.id);agApply(o,spec,!1);
+if(spec.parent!==void 0){const pid=spec.parent&&String(spec.parent);if(pid&&pid!==spec.id&&agent.objects.has(pid)){agent.objects.get(pid).attach(o);o.userData.parentId=pid}else if(!pid||pid==="world"){agentWorld.attach(o);o.userData.parentId=null}}
+agFocus(o)}
+function agRemove(id,instant){const o=agent.objects.get(String(id));if(!o)throw new Error("no object with id "+id);if(instant)agFinalRemove(o);else if(o.userData.dying===void 0)o.userData.dying=0}
+function agFinalRemove(o){o.traverse(c=>{const cid=c.userData&&c.userData.agentId;cid&&(agent.objects.delete(cid),c.userData.light&&agent.lights--);c.material&&c.material.dispose&&c.material.dispose()});o.parent&&o.parent.remove(o);agent.dirty=!0}
+function agClear(){agSwitch("home");for(const w of Object.values(agent.worlds))for(const o of[...w.group.children])agFinalRemove(o);agent.objects.clear();agent.lights=0;agent.dirty=!0}
+function agEnv(e){const E=agent.env;
+if(e.background!==void 0&&!arMode){const c=agColor(e.background);scene.background=c;scene.fog&&scene.fog.color.copy(c);try{skyDome.material.color.copy(c)}catch{}E.background=e.background}
+if(scene.fog){e.fogColor!==void 0&&(scene.fog.color.copy(agColor(e.fogColor)),E.fogColor=e.fogColor);e.fogNear!==void 0&&(scene.fog.near=agNum(e.fogNear,16,0,500),E.fogNear=scene.fog.near);e.fogFar!==void 0&&(scene.fog.far=agNum(e.fogFar,55,1,1e3),E.fogFar=scene.fog.far)}
+try{if(e.sun!==void 0){agent.sun0==null&&(agent.sun0=sunLight.intensity);sunLight.intensity=agent.sun0*agNum(e.sun,1,0,4);E.sun=e.sun}if(e.sunColor!==void 0){sunLight.color.copy(agColor(e.sunColor));E.sunColor=e.sunColor}}catch{}
+try{if(e.ambient!==void 0){agent.amb0==null&&(agent.amb0=bounce.intensity);bounce.intensity=agent.amb0*agNum(e.ambient,1,0,4);E.ambient=e.ambient}}catch{}
+if(e.exposure!==void 0){renderer.toneMappingExposure=agNum(e.exposure,1,.1,3);E.exposure=e.exposure}
+if(e.gravity!==void 0){agent.gravity=agNum(e.gravity,9.8,-100,300);E.gravity=agent.gravity}
+{const P=agent.phys;
+if(e.gravityXZ!==void 0){const g=Array.isArray(e.gravityXZ)?e.gravityXZ:[0,0];P.gx=agNum(g[0],0,-100,100);P.gz=agNum(g[1],0,-100,100);E.gravityXZ=[P.gx,P.gz]}
+if(e.bounce!==void 0){P.bounce=agNum(e.bounce,.55,0,1.1);E.bounce=P.bounce}
+if(e.friction!==void 0){P.friction=agNum(e.friction,4,0,60);E.friction=P.friction}
+if(e.drag!==void 0){P.drag=agNum(e.drag,0,0,10);E.drag=P.drag}
+if(e.timeScale!==void 0){P.ts=agNum(e.timeScale,1,0,5);E.timeScale=P.ts}
+if(e.solidWalls!==void 0){P.solid=!!e.solidWalls;E.solidWalls=P.solid}
+if(e.floor!==void 0){P.nofloor=e.floor===!1||e.floor==="off";E.floor=!P.nofloor}
+if(e.boundaryLimit!==void 0){P.unb=e.boundaryLimit===!1||e.boundaryLimit==="off";E.boundaryLimit=!P.unb}
+if(e.playerGravity!==void 0){P.pg=agNum(e.playerGravity,9.8,-30,60);E.playerGravity=P.pg}
+if(e.jump!==void 0){P.jump=agNum(e.jump,3.4,0,30);E.jump=P.jump}
+if(e.speed!==void 0){P.speed=agNum(e.speed,1,.1,10);E.speed=P.speed}}
+agent.dirty=!0}
+function agPhysDefaults(){Object.assign(agent.phys,{gx:0,gz:0,bounce:.55,friction:4,drag:0,ts:1,solid:!1,nofloor:!1,unb:!1,pg:9.8,jump:3.4,speed:1})}
+function agPhysInfo(){const P=agent.phys;return{gravity:agent.gravity,gravityXZ:[P.gx,P.gz],bounce:P.bounce,friction:P.friction,drag:P.drag,timeScale:P.ts,solidWalls:P.solid,floor:!P.nofloor,boundaryLimit:!P.unb,player:{gravity:P.pg,jump:P.jump,speed:P.speed}}}
+function agJumpOK(y,tol){return agent.phys.pg<=.5||(y<=tol&&0===jumpVelocity)}
+/* ===== space: room size, walls, look ===== */
+function agSpaceSave(){try{const B=roomBounds;localStorage.setItem("museAgentSpace",JSON.stringify({b:agent.space0?{x0:B.x0,x1:B.x1,z0:B.z0,z1:B.z1,h:B.h}:null,look:agent.look}))}catch{}}
+function agFarFor(w,d,h){try{const diag=Math.hypot(w,d,h),need=Math.max(150,diag*2+60);if(camera.far<need){camera.far=need;camera.updateProjectionMatrix()}const half=Math.min(40,Math.max(6.5,Math.hypot(w,d)/2)),c=spaceBackdrop.sun.light.shadow.camera;c.left=c.bottom=-half;c.right=c.top=half;c.updateProjectionMatrix()}catch{}}
+function agLookApply(){const R=window.RS,L=agent.look;if(!R||!L)return;
+const mat=(m,col,op)=>{if(!m)return;if(col!==void 0)m.color.copy(agColor(col));if(op!==void 0){m.transparent=op<1;m.opacity=op;m.depthWrite=op>=1;m.needsUpdate=!0}};
+mat(R.walls[0]&&R.walls[0].material,L.wc,L.wo);mat(R.ceil&&R.ceil.material,L.cc,L.co);mat(R.floor&&R.floor.material,L.fc,void 0);
+if(L.grid!==void 0&&R.floor){const m=R.floor.material;m.userData.map0||(m.userData.map0=m.map);m.map=L.grid?m.userData.map0:null;m.needsUpdate=!0}}
+function agLookTick(){const L=agent.look,R=window.RS;if(!L||!R||agent.alt||arMode)return;
+if(L.walls!==void 0)for(const w of R.walls){w.visible=!!L.walls;if(L.walls){w.material.colorWrite=!0;w.material.depthWrite=w.material.opacity>=1}}
+if(L.ceil!==void 0&&R.ceil){R.ceil.visible=!!L.ceil;if(L.ceil)R.ceil.material.colorWrite=!0}
+if(L.lights!==void 0)for(const l of R.lights){l.visible=!!L.lights;if(L.lights)l.material.colorWrite=!0}
+if(L.floor!==void 0&&R.floor){R.floor.visible=!!L.floor;R.floor.material.colorWrite=!0}}
+function agSpaceDesc(){const B=agent.alt?agent.alt.bounds:roomBounds,h=agent.alt?"unbounded":roomBounds.h;return(agent.alt?"world":"room")+" x["+B.x0.toFixed(1)+","+B.x1.toFixed(1)+"] z["+B.z0.toFixed(1)+","+B.z1.toFixed(1)+"] "+(B.x1-B.x0).toFixed(1)+"x"+(B.z1-B.z0).toFixed(1)+"m, height "+(typeof h==="number"?h.toFixed(1):h)}
+function agSpaceReset(){const sp=agent.space0;let st=null;if(!sp)try{st=JSON.parse(localStorage.getItem("museAgentSpace0")||"null")}catch{}
+const o=sp||st;if(o&&!arMode){Object.assign(roomBounds,{x0:o.x0,x1:o.x1,z0:o.z0,z1:o.z1,h:o.h,real:!1,feats:o.feats||[]});try{buildRoomFromBounds();saveRoomFit()}catch{}}
+agent.space0=null;agent.look=null;try{localStorage.removeItem("museAgentSpace0");localStorage.removeItem("museAgentSpace")}catch{}
+try{const R=window.RS;if(R){R.walls[0].material.color.set(16053490);R.walls[0].material.transparent=!1;R.walls[0].material.opacity=1;R.walls[0].material.depthWrite=!0;R.walls[0].material.needsUpdate=!0;R.ceil.material.color.set(15527146);R.ceil.material.transparent=!1;R.ceil.material.opacity=1;R.ceil.material.needsUpdate=!0;R.floor.material.color.set(16777215);const m=R.floor.material;if(m.userData.map0){m.map=m.userData.map0;m.needsUpdate=!0}
+if(!arMode){for(const w of R.walls)w.visible=!1;R.ceil.visible=!1;for(const l of R.lights)l.visible=!1;R.floor.visible=!0}}}catch{}
+try{camera.far=150;camera.updateProjectionMatrix();const c=spaceBackdrop.sun.light.shadow.camera;c.left=c.bottom=-6.5;c.right=c.top=6.5;c.updateProjectionMatrix()}catch{}}
+function agSpaceRestore(){try{const st=JSON.parse(localStorage.getItem("museAgentSpace")||"null");if(!st)return;
+if(st.b&&!arMode){if(!agent.space0)try{agent.space0=JSON.parse(localStorage.getItem("museAgentSpace0")||"null")}catch{}
+Object.assign(roomBounds,{x0:st.b.x0,x1:st.b.x1,z0:st.b.z0,z1:st.b.z1,h:st.b.h,real:!1,feats:[]});buildRoomFromBounds();agFarFor(st.b.x1-st.b.x0,st.b.z1-st.b.z0,st.b.h)}
+if(st.look){agent.look=st.look;agLookApply()}}catch(e){console.warn("[space restore]",e)}}
+function agSpaceOp(a){const N=agNum,out=[];
+if(a.reset){agSpaceReset();return"space reset: "+agSpaceDesc()}
+const alt=agent.alt;
+const hasGeo=["bounds","size","width","depth","height","center"].some(k=>a[k]!==void 0);
+if(hasGeo){const B=alt?alt.bounds:roomBounds;let w=B.x1-B.x0,d=B.z1-B.z0,h=roomBounds.h,cx=(B.x0+B.x1)/2,cz=(B.z0+B.z1)/2;
+if(Array.isArray(a.bounds)&&a.bounds.length>3){const q=a.bounds.map(v=>N(v,0,-1000,1000));w=Math.abs(q[1]-q[0]);d=Math.abs(q[3]-q[2]);cx=(q[0]+q[1])/2;cz=(q[2]+q[3])/2}
+if(a.size!==void 0){const s=Array.isArray(a.size)?a.size:[a.size,a.size,a.size];w=N(s[0],w,1,600);d=N(s[1]??s[0],d,1,600);if(s[2]!==void 0)h=N(s[2],h,.5,300)}
+if(a.width!==void 0)w=N(a.width,w,1,600);if(a.depth!==void 0)d=N(a.depth,d,1,600);if(a.height!==void 0)h=N(a.height,h,.5,300);
+if(Array.isArray(a.center)){cx=N(a.center[0],cx,-1000,1000);cz=N(a.center[a.center.length>2?2:1],cz,-1000,1000)}
+w=Math.max(1,w);d=Math.max(1,d);
+if(alt){alt.bounds={x0:cx-w/2,x1:cx+w/2,z0:cz-d/2,z1:cz+d/2};agent.dirty=!0;if(!a.keepPlayer)try{keepPlayerInRoom(.4)}catch{}}
+else if(arMode){out.push("AR mode uses the real room walls, so the virtual room size was not changed")}
+else{if(!agent.space0){agent.space0={x0:roomBounds.x0,x1:roomBounds.x1,z0:roomBounds.z0,z1:roomBounds.z1,h:roomBounds.h,feats:roomBounds.feats};try{localStorage.setItem("museAgentSpace0",JSON.stringify({...agent.space0,feats:[]}))}catch{}}
+Object.assign(roomBounds,{x0:cx-w/2,x1:cx+w/2,z0:cz-d/2,z1:cz+d/2,h,real:!1,feats:[]});buildRoomFromBounds();agFarFor(w,d,h);saveRoomFit();
+try{keepPlayerInRoom(.4)}catch{}}}
+const L=agent.look||(agent.look={});let touched=!1;
+const col=(k,key)=>{if(a[k]!==void 0){L[key]=String(a[k]);touched=!0}},num=(k,key,lo,hi)=>{if(a[k]!==void 0){L[key]=N(a[k],1,lo,hi);touched=!0}},bool=(k,key)=>{if(a[k]!==void 0){L[key]=!!a[k]&&a[k]!=="off";touched=!0}};
+col("wallColor","wc");col("ceilingColor","cc");col("floorColor","fc");num("wallOpacity","wo",0,1);num("ceilingOpacity","co",0,1);
+bool("walls","walls");bool("ceiling","ceil");bool("lights","lights");bool("showFloor","floor");bool("grid","grid");
+if(touched){agLookApply();if(alt)out.push("(visual walls/colors only show in the home room; in other worlds build them with spawn)")}
+if(a.limit!==void 0)agEnv({boundaryLimit:!!a.limit&&a.limit!=="off"});
+if(a.solidWalls!==void 0)agEnv({solidWalls:a.solidWalls});
+agSpaceSave();agent.dirty=!0;
+return"ok \u2192 "+agSpaceDesc()+"; boundaryLimit "+!agent.phys.unb+"; "+out.join(" ")}
+function agPlayerOp(a){const k={};for(const[x,y]of[["gravity","playerGravity"],["playerGravity","playerGravity"],["jump","jump"],["speed","speed"]])if(a[x]!==void 0)k[y]=a[x];agEnv(k);
+if(a.lift!==void 0){playerRig.position.y=agNum(a.lift,0,0,500);try{jumpVelocity=0}catch{}}
+if(a.fly===!0){agEnv({playerGravity:0})}else if(a.fly===!1){agEnv({playerGravity:9.8})}
+agent.playerMoved=!0;return"player "+JSON.stringify(agPhysInfo().player)+" lift "+playerRig.position.y.toFixed(2)}
+function agBlip(f,wave,dur){try{const a=getAudioContext();if(!a)return;const t=a.currentTime,o=a.createOscillator(),g=a.createGain();o.type=wave||"sine";o.frequency.value=agNum(f,600,40,4e3);dur=agNum(dur,.16,.03,1);g.gain.setValueAtTime(1e-4,t);g.gain.exponentialRampToValueAtTime(.025,t+.02);g.gain.exponentialRampToValueAtTime(1e-4,t+dur);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+dur+.02)}catch{}}
+function agSay(text,emoji){text=String(text||"").trim();
+if(text)try{setStatus("🧚 "+text)}catch{}
+const em=Array.isArray(emoji)?emoji.filter(x=>typeof x==="string").slice(0,8):[];
+for(const c of[...agBubble.children]){agBubble.remove(c);c.material&&(c.material.dispose(),c.material.map&&0)}
+em.forEach((e,i)=>{try{const q=createEmojiQuad(e,.13,256);q.position.x=(i-(em.length-1)/2)*.15;q.frustumCulled=!1;agBubble.add(q)}catch{}});
+agent.bubbleUntil=em.length?performance.now()+7e3:0;agent.lastSay=text||agent.lastSay}
+function agRemember(note){note=String(note||"").slice(0,300);if(!note)return;agent.memory.push(note);agent.memory=agent.memory.slice(-25);try{localStorage.setItem("museAgentMemory",JSON.stringify(agent.memory))}catch{}}
+function agSave(){try{const list=[];for(const[id,o]of agent.objects){const u=o.userData,sp={...u.spec};sp.pos=[+o.position.x.toFixed(2),+((u.spec.anim&&u.spec.anim.bob&&!u.spec.physics&&u.y0!=null)?u.y0:o.position.y).toFixed(2),+o.position.z.toFixed(2)];sp.rot=[+(o.rotation.x/AG_D2R).toFixed(1),+(o.rotation.y/AG_D2R).toFixed(1),+(o.rotation.z/AG_D2R).toFixed(1)];list.push({id,shape:u.shape,parent:u.parentId,world:u.world,...sp})}
+const s=JSON.stringify({objs:list,env:agent.world==="home"?agent.env:agent.worlds.home.env,counter:agent.counter,state:agent.state,worlds:Object.fromEntries(Object.entries(agent.worlds).filter(([k])=>k!=="home").map(([k,w])=>[k,{env:k===agent.world?agent.env:w.env,bounds:w.bounds,spawn:w.spawn}]))});s.length<4e5&&localStorage.setItem("museAgentWorld",s)}catch{}}
+function agRestore(){try{const w=JSON.parse(localStorage.getItem("museAgentWorld")||"null");if(!w)return;agent.counter=w.counter||0;agent.state=w.state||{};for(const k in w.worlds||{}){const x=w.worlds[k],ww=agWorldOf(k);Object.assign(ww.env,x.env||{});x.bounds&&(ww.bounds=x.bounds);x.spawn&&(ww.spawn=x.spawn)}for(const s of w.objs||[])try{agSpawn({...s,_silent:!0})}catch{}w.env&&Object.keys(w.env).length&&agEnv(w.env)}catch{}}
+
+const agR2=n=>+Number(n).toFixed(2);
+function agSettle(o){if(o===agentWorld)for(const w of Object.values(agent.worlds))w.group!==o&&agSettle(w.group);o.traverse(c=>{const u=c.userData;if(u&&u.agentId&&u.base&&u.spawnT<1&&u.dying===void 0){u.spawnT=1;c.scale.set(u.base[0],u.base[1],u.base[2])}})}
+function agTargetInfo(t){agSettle(agentWorld);agentWorld.updateMatrixWorld(!0);const b=new THREE.Box3;
+if(typeof t==="string"&&t!=="all"&&agent.objects.has(t))b.setFromObject(agent.objects.get(t));
+else if(Array.isArray(t)){const p=agVec(t,[0,1,0],500);b.setFromCenterAndSize(new Vector3(p[0],p[1],p[2]),new Vector3(1.5,1.5,1.5))}
+else b.setFromObject(agent.worlds[agent.world].group);
+if(b.isEmpty()){const f=agFront(3);b.setFromCenterAndSize(new Vector3(f[0],1,f[2]),new Vector3(3,2,3))}
+return{c:b.getCenter(new Vector3),r:Math.max(.5,b.getSize(new Vector3).length()/2)}}
+function agSnapViews(a){const info=agTargetInfo(a.target===void 0?"all":a.target),dist=a.distance?agNum(a.distance,5,.5,200):Math.max(3,info.r*2.2);
+const P={front:[0,.25,1],back:[0,.25,-1],right:[1,.25,0],left:[-1,.25,0],top:[0,1,1e-4],iso:[1,.75,1]},out=[];
+const list=Array.isArray(a.views)?a.views:a.view?[a.view]:a.from?[{from:a.from,at:a.at}]:["front","right","top"];
+const tn=typeof a.target==="string"?a.target:Array.isArray(a.target)?"point ["+a.target+"]":"everything";
+for(const v of list.slice(0,6)){
+if(typeof v==="string"){if(v==="player"){out.push({player:!0,fov:agNum(a.fov,70,30,110),label:"player view (exactly what the person sees)",labels:a.labels});continue}
+const n=new Vector3(...(P[v]||P.iso)).normalize().multiplyScalar(v==="top"?dist*1.3:dist);
+out.push({from:[info.c.x+n.x,Math.max(.3,info.c.y+n.y),info.c.z+n.z],at:[info.c.x,info.c.y,info.c.z],fov:agNum(a.fov,60,20,110),label:(P[v]?v:"iso")+" view of "+tn,grid:a.grid,labels:a.labels})}
+else if(v&&typeof v==="object"){let at=v.at;typeof at==="string"&&(at=agTargetInfo(at).c.toArray());out.push({from:agVec(v.from,[0,2,5],500),at:agVec(at,[0,1,0],500),fov:agNum(v.fov||a.fov,60,20,110),label:String(v.label||"custom view").slice(0,80),grid:v.grid??a.grid,labels:v.labels??a.labels})}}
+return out}
+const AG_SW=640,AG_SH=480,agSnapQueue=[];let agSnapRT=null,agSnapPix=null,agSnapCv=null,agSnapCam=null,agGrid=null;
+function agSnapshot(view){return new Promise(res=>{agSnapQueue.push({view,res});setTimeout(()=>{const i=agSnapQueue.findIndex(q=>q.res===res);i>=0&&(agSnapQueue.splice(i,1),res(null))},5e3)})}
+function agRenderView(v){
+if(!agSnapRT){agSnapRT=new THREE.WebGLRenderTarget(AG_SW,AG_SH,{samples:2});agSnapRT.texture.colorSpace=THREE.SRGBColorSpace;agSnapPix=new Uint8Array(AG_SW*AG_SH*4);agSnapCv=document.createElement("canvas");agSnapCv.width=AG_SW;agSnapCv.height=AG_SH;agSnapCam=new THREE.PerspectiveCamera(60,AG_SW/AG_SH,.05,150);
+agGrid=new THREE.GridHelper(100,100,16733525,6728328);agGrid.position.y=.015;agGrid.material.transparent=!0;agGrid.material.opacity=.55;agGrid.material.depthWrite=!1;agGrid.visible=!1;scene.add(agGrid)}
+const cam=agSnapCam;cam.fov=v.fov||60;cam.updateProjectionMatrix();cam.up.set(0,1,0);
+if(v.player){camera.updateWorldMatrix(!0,!1);camera.getWorldPosition(cam.position);camera.getWorldQuaternion(cam.quaternion)}
+else{cam.position.set(v.from[0],v.from[1],v.from[2]);agTmp.set(v.at[0],v.at[1],v.at[2]);Math.abs(agTmp.x-cam.position.x)<.01&&Math.abs(agTmp.z-cam.position.z)<.01&&cam.up.set(0,0,-1);cam.lookAt(agTmp)}
+cam.updateMatrixWorld(!0);agSettle(agentWorld);agentWorld.updateMatrixWorld(!0);
+const hide=[agBubble];try{hide.push(emojiWheel,toolbar,statusPanel,sparkFairy,sparkAnswerGroup,sparkOrb,pointerCursors.left,pointerCursors.right,pointerCursors.desktop,...flyingEmojiMessages.map(l=>l.g))}catch{}
+const vis=hide.map(x=>x.visible);hide.forEach(x=>x.visible=!1);agGrid.visible=v.grid!==!1&&!v.player;
+const prevRT=renderer.getRenderTarget(),prevXR=renderer.xr.enabled;
+try{renderer.xr.enabled=!1;renderer.setRenderTarget(agSnapRT);renderer.render(scene,cam);renderer.readRenderTargetPixels(agSnapRT,0,0,AG_SW,AG_SH,agSnapPix)}
+finally{renderer.setRenderTarget(prevRT);renderer.xr.enabled=prevXR;hide.forEach((x,i)=>x.visible=vis[i]);agGrid.visible=!1}
+const ctx=agSnapCv.getContext("2d"),img=ctx.createImageData(AG_SW,AG_SH),row=4*AG_SW;
+for(let y=0;y<AG_SH;y++)img.data.set(agSnapPix.subarray((AG_SH-1-y)*row,(AG_SH-y)*row),y*row);ctx.putImageData(img,0,0);
+const p=new Vector3;
+if(v.labels!==!1){ctx.font="bold 13px system-ui,sans-serif";ctx.textAlign="center";let n=0;
+const tag=(wp,text,bg)=>{p.copy(wp).project(cam);if(p.z>1||p.z<-1||Math.abs(p.x)>1.02||Math.abs(p.y)>1.02)return;const x=(p.x*.5+.5)*AG_SW,y=(-p.y*.5+.5)*AG_SH,tw=ctx.measureText(text).width;ctx.fillStyle=bg;ctx.fillRect(x-tw/2-3,y-9,tw+6,17);ctx.fillStyle="#fff";ctx.fillText(text,x,y+4)};
+for(const[id,o]of agent.objects){if(o.userData.parentId||o.userData.world!==agent.world)continue;if(n++>45)break;tag(o.getWorldPosition(new Vector3),id,"rgba(0,0,0,.6)")}
+if(!v.player){getWorldPosition(camera,p);p.y-=.2;tag(p.clone(),"PLAYER","rgba(0,110,160,.9)")}}
+ctx.textAlign="left";ctx.font="12px system-ui,sans-serif";ctx.fillStyle="rgba(0,0,0,.55)";ctx.fillRect(0,AG_SH-20,AG_SW,20);ctx.fillStyle="#fff";
+ctx.fillText(("cam ["+[cam.position.x,cam.position.y,cam.position.z].map(agR2)+"] fov "+Math.round(cam.fov)+(v.player?"":"  grid=1m, red lines = x=0 / z=0")).slice(0,100),6,AG_SH-6);
+return agSnapCv.toDataURL("image/jpeg",.72)}
+function agWorldBox(o){agSettle(o);o.updateWorldMatrix(!0,!0);const b=new THREE.Box3().setFromObject(o);if(b.isEmpty()){o.getWorldPosition(agTmp);b.setFromCenterAndSize(agTmp.clone(),new Vector3(.2,.2,.2))}return b}
+function agSetWorldPos(o,wp){const l=o.parent?o.parent.worldToLocal(wp.clone()):wp.clone();o.position.copy(l);o.userData.y0=l.y;agent.dirty=!0}
+function agBoxStr(b){return"bbox ["+[b.min.x,b.min.y,b.min.z,b.max.x,b.max.y,b.max.z].map(agR2)+"]"}
+function agPlace(a){const o=agent.objects.get(String(a.id));if(!o)throw new Error("no object "+a.id);agentWorld.updateMatrixWorld(!0);
+const bo=agWorldBox(o),ctr=bo.getCenter(new Vector3),size=bo.getSize(new Vector3),piv=o.getWorldPosition(new Vector3),off=piv.clone().sub(ctr),want=ctr.clone(),gap=agNum(a.gap,0,-5,20),d=Array.isArray(a.offset)?a.offset:[0,0];
+const tgt=id=>{const t=agent.objects.get(String(id));if(!t)throw new Error("no object "+id);return agWorldBox(t)};
+if(a.on){const bt=tgt(a.on),ct=bt.getCenter(new Vector3);want.set(ct.x+(+d[0]||0),bt.max.y+size.y/2+gap,ct.z+(+d[1]||0))}
+else if(a.beside){const bt=tgt(a.beside),ct=bt.getCenter(new Vector3),st=bt.getSize(new Vector3),sd=String(a.side||"+x");want.copy(ct);want.y=bt.min.y+size.y/2;
+if(sd==="+x"||sd==="right")want.x=bt.max.x+size.x/2+gap;else if(sd==="-x"||sd==="left")want.x=bt.min.x-size.x/2-gap;else if(sd==="+z"||sd==="front")want.z=bt.max.z+size.z/2+gap;else if(sd==="-z"||sd==="back")want.z=bt.min.z-size.z/2-gap;else throw new Error("side must be +x,-x,+z or -z");
+if(sd.endsWith("x")||sd==="left"||sd==="right")want.z+=+d[1]||+d[0]||0;else want.x+=+d[0]||0}
+else if(a.ground){const g=agVec(a.ground,[0,0],500);want.set(g[0],size.y/2,g[1])}
+else if(a.in_front_of_player!==void 0){const f=agFront(agNum(a.in_front_of_player,3,.5,60));want.set(f[0],size.y/2,f[2])}
+else if(a.at){const p=agVec(a.at,[0,1,0],500);want.set(p[0],p[1],p[2])}
+agSetWorldPos(o,want.add(off));
+if(a.look_at!==void 0){let t;if(typeof a.look_at==="string"){t=agent.objects.get(a.look_at);if(!t)throw new Error("no object "+a.look_at);t=t.getWorldPosition(new Vector3)}else{const p=agVec(a.look_at,[0,0,0],500);t=new Vector3(p[0],p[1],p[2])}o.getWorldPosition(piv);o.rotation.y=Math.atan2(t.x-piv.x,t.z-piv.z)}
+agFocus(o);const nb=agWorldBox(o);return"placed "+a.id+" at centre ["+nb.getCenter(new Vector3).toArray().map(agR2)+"], "+agBoxStr(nb)}
+async function agMove(a){const ids=(a.ids||[a.id]).map(String),dur=agNum(a.duration,1,.05,8);agentWorld.updateMatrixWorld(!0);
+const dl=a.by?agVec(a.by,[0,0,0],500):null,to=a.to?agVec(a.to,[0,0,0],500):null;
+for(const id of ids){const o=agent.objects.get(id);if(!o)throw new Error("no object "+id);const w=o.getWorldPosition(new Vector3);
+if(to&&ids.length===1)w.set(to[0],to[1],to[2]);else if(dl)w.add(new Vector3(dl[0],dl[1],dl[2]));else if(to){w.set(to[0],to[1],to[2])}
+const p1=o.parent?o.parent.worldToLocal(w.clone()):w.clone(),u=o.userData,tw={t:0,dur,p0:o.position.clone(),p1};
+if(a.rot||a.rot_by){const r=agVec(a.rot||a.rot_by,[0,0,0],3600).map(x=>x*AG_D2R);tw.r0=[o.rotation.x,o.rotation.y,o.rotation.z];tw.r1=a.rot_by?tw.r0.map((x,i)=>x+r[i]):r}
+u.tween=tw}
+agFocus(agent.objects.get(ids[0]));if(a.wait!==!1)await agSleep(Math.min(dur,6)*1e3+80);return"moved "+ids.join(",")}
+function agEnvDefaults(){const d=agent.def;if(!d)return;try{if(d.bg&&!arMode)scene.background=d.bg.clone();if(d.fog&&scene.fog){scene.fog.color.copy(d.fog.c);scene.fog.near=d.fog.n;scene.fog.far=d.fog.f}if(d.sun!=null)sunLight.intensity=d.sun;if(d.sunC)sunLight.color.copy(d.sunC);if(d.amb!=null)bounce.intensity=d.amb;if(d.sky)skyDome.material.color.copy(d.sky);renderer.toneMappingExposure=d.exp}catch{}}
+function agCaptureDefaults(){const d={bg:scene.background&&scene.background.isColor?scene.background.clone():null,fog:scene.fog?{c:scene.fog.color.clone(),n:scene.fog.near,f:scene.fog.far}:null,sun:null,sunC:null,amb:null,sky:null,exp:renderer.toneMappingExposure};
+try{d.sun=sunLight.intensity;d.sunC=sunLight.color.clone()}catch{}try{d.amb=bounce.intensity}catch{}try{d.sky=skyDome.material.color.clone()}catch{}
+agent.def=d;agent.rig0={x:playerRig.position.x,z:playerRig.position.z}}
+function agResetRoom(o){o=o||{};if(agent.busy&&!o.fromOp)agent.cancel=!0;agent.pending=null;agClear();agent.hooks.length=0;agent.env={};agWorldsReset();agEnvDefaults();agent.color.set(16771466);agent.scale=1;agent.gravity=9.8;agPhysDefaults();agSpaceReset();try{playerRig.position.y=0;jumpVelocity=0}catch{}agent.counter=0;
+if(!o.fromOp)agent.convo=[];
+if(agent.playerMoved&&agent.rig0){playerRig.position.x=agent.rig0.x;playerRig.position.z=agent.rig0.z;agent.playerMoved=!1}
+for(const c of[...agBubble.children])agBubble.remove(c);agent.bubbleUntil=0;
+for(const k of["left","right","ptr"])agDrop(k,!0);agent.hov={};agent.sq={};agFade.visible=!1;agent.xf=null;agent.state={};agent.evq=[];agent.evlog=[];agent.imgs=[];agent.lastSay="";
+if(!o.fromOp){agent.schedules=[];agSaveSched();o.memory=!0;agent.convo=[];agent.pos.set(...agFront(1.4).map((v,i)=>i===1?1.6:v));agent.goal.copy(agent.pos)}
+agent.dirty=!1;agSave();
+if(o.memory){agent.memory=[];try{localStorage.setItem("museAgentMemory","[]")}catch{}}
+try{setStatus("🧹 Room reset to its default state.")}catch{}return"room reset to default"}
+let agResetArm=0;
+function agResetPress(setLabel,normal){const now=performance.now();if(now<agResetArm){agResetArm=0;setLabel(normal);agResetRoom({});return}agResetArm=now+3500;setLabel("⚠️ Tap again to confirm");setTimeout(()=>{agResetArm&&performance.now()>=agResetArm-100&&(agResetArm=0,setLabel(normal))},3600)}
+function agSaveSched(){try{localStorage.setItem("museAgentSched",JSON.stringify(agent.schedules))}catch{}agSchedUI()}
+function agSchedUI(){try{const e=byId("agentCycles");e&&(e.textContent=agent.schedules.length?"Repeating: "+agent.schedules.map(x=>"“"+x.task.slice(0,40)+"” every "+x.every+" min").join("; "):"No repeating tasks.")}catch{}}
+function agLoadSched(){try{const l=JSON.parse(localStorage.getItem("museAgentSched")||"[]");if(Array.isArray(l))agent.schedules=l.filter(x=>x&&x.task&&x.every>0).slice(0,5).map(x=>({...x,next:Math.max(x.next||0,Date.now()+3e4)}))}catch{}}
+async function agExec(a){const op=String(a.op||a.type||a.action||"");
+switch(op){
+case"snapshot":{const out=[];for(const v of agSnapViews(a)){const url=await agSnapshot(v);if(!url)continue;let lab=v.label;if(v.player){getWorldPosition(camera,agCam);lab+=" — eye ["+[agCam.x,agCam.y,agCam.z].map(agR2)+"]"}else lab+=" — camera ["+v.from.map(agR2)+"] looking at ["+v.at.map(agR2)+"]";agent.imgs.push({url,label:lab});out.push(v.label)}return out.length?"captured "+out.length+" image(s): "+out.join("; ")+" — they arrive with the next message":"snapshot failed (rendering unavailable)"}
+case"raycast":{const rc=new THREE.Raycaster;let o,d;if(a.from){const f=agVec(a.from,[0,5,0],500),dd=agVec(a.dir,[0,-1,0],1);o=new Vector3(f[0],f[1],f[2]);d=new Vector3(dd[0],dd[1],dd[2]).normalize()}else{const p=Array.isArray(a.at)?a.at:Array.isArray(a.pos)?a.pos:[0,0];o=new Vector3(agNum(p[0],0,-500,500),200,agNum(p.length>2?p[2]:p[1],0,-500,500));d=new Vector3(0,-1,0)}
+agentWorld.updateMatrixWorld(!0);rc.set(o,d);rc.far=600;const hit=rc.intersectObjects(agent.worlds[agent.world].group.children,!0).find(h=>h.object.visible);
+if(!hit)return"no object hit"+(d.y<-.01?"; ground (y=0) at ["+agR2(o.x+d.x*(-o.y/d.y))+", "+agR2(o.z+d.z*(-o.y/d.y))+"]":"");
+let h=hit.object;while(h&&!(h.userData&&h.userData.agentId))h=h.parent;return"hit "+(h?h.userData.agentId:"?")+" at ["+hit.point.toArray().map(agR2)+"], distance "+agR2(hit.distance)}
+case"measure":{agentWorld.updateMatrixWorld(!0);const out={};for(const id of a.ids||[a.id]){const o=agent.objects.get(String(id));if(!o){out[id]="missing";continue}const b=agWorldBox(o);out[id]={center:b.getCenter(new Vector3).toArray().map(agR2),size:b.getSize(new Vector3).toArray().map(agR2),bbox:[b.min.x,b.min.y,b.min.z,b.max.x,b.max.y,b.max.z].map(agR2)}}return JSON.stringify(out)}
+case"place":return agPlace(a);
+case"move":return await agMove(a);
+case"schedule":{const every=agNum(a.every_minutes,0,.5,1440),task=String(a.task||"").trim().slice(0,400);if(!every||!task)throw new Error("schedule needs every_minutes (>=0.5) and task");const id=String(a.id||"cycle"+(agent.schedules.length+1)).slice(0,30);agent.schedules=agent.schedules.filter(x=>x.id!==id);if(agent.schedules.length>=5)throw new Error("max 5 repeating tasks");agent.schedules.push({id,task,every,count:a.count?agNum(a.count,0,1,1e4):0,runs:0,next:Date.now()+agNum(a.start_in_minutes,every,0,1440)*6e4});agSaveSched();return"scheduled '"+id+"' every "+every+" min (runs only while this page is open)"}
+case"unschedule":{a.all?agent.schedules=[]:agent.schedules=agent.schedules.filter(x=>x.id!==String(a.id));agSaveSched();return"ok"}
+case"reset":return agResetRoom({fromOp:!0,memory:!!a.memory});
+case"world":return agWorldOp(a);case"portal":agSpawn({...a,shape:"portal",size:a.size===void 0?2:a.size});return"ok";case"goto":{agGoto(a.world||a.name,a.spawn);for(let i=0;i<40&&agent.xf;i++)await agSleep(50);return"ok"}case"state":{a.set&&typeof a.set==="object"&&Object.assign(agent.state,a.set);for(const k of a.del||[])delete agent.state[k];agent.dirty=!0;return"ok"}case"tell":agTell(a.text);return"ok";case"spawn":agSpawn(a);return"ok";
+case"modify":agModify(a);return"ok";
+case"delete":{const ids=a.ids||[a.id];for(const i of ids)agRemove(i,!1);return"ok"}
+case"clear":agClear();return"ok";
+case"push":{const o=agent.objects.get(String(a.id));if(!o)throw new Error("no object "+a.id);const v=agVec(a.vel,[0,3,0],60),u=o.userData;u.vx=v[0];u.vy=v[1];u.vz=v[2];u.spec.physics=!0;return"ok"}
+case"environment":agEnv(a);return"ok";
+case"self":a.color!==void 0&&agent.color.copy(agColor(a.color));a.scale!==void 0&&(agent.scale=agNum(a.scale,1,.3,4));return"ok";
+case"move_self":{const p=agVec(a.pos,[0,1.6,-2],120);agent.goal.set(p[0],Math.max(.2,p[1]),p[2]);agent.fast=!0;await agSleep(450);return"ok"}
+case"move_player":{const p=Array.isArray(a.pos)?a.pos:[];const x=agNum(p.length>2?p[0]:p[0],0,-120,120),z=agNum(p.length>2?p[2]:p[1],0,-120,120);getWorldPosition(camera,agCam);playerRig.position.x+=x-agCam.x;playerRig.position.z+=z-agCam.z;agent.playerMoved=!0;return"ok"}
+case"effect":{const p=agVec(a.pos,[0,1.5,-2],120);try{sparkFairyEffects.burst(new Vector3(p[0],p[1],p[2]),agNum(a.strength,1,.2,3))}catch{}return"ok"}
+case"sound":{const n=(Array.isArray(a.notes)?a.notes:[a.freq||600]).slice(0,16);let i=0;for(const f of n){agBlip(f,a.wave,a.dur);await agSleep(agNum(a.gap,(a.dur||.16)*700,40,800));if(++i>16)break}return"ok"}
+case"say":agSay(a.text,a.emoji);return"ok";
+case"remember":agRemember(a.note);return"ok";
+case"forget":a.all?(agent.memory=[],localStorage.setItem("museAgentMemory","[]")):0;return"ok";
+case"wait":await agSleep(agNum(a.ms,300,0,3e3));return"ok";
+case"run_js":{const ctx={THREE,scene,camera,renderer,playerRig,agent,fairy:agentFairy,world:agentWorld,spawn:agSpawn,modify:agModify,remove:id=>agRemove(id,!1),sleep:agSleep,front:agFront,say:agSay,env:agEnv,on:agOn,tell:agTell,hands:agHands,get:id=>agent.objects.get(String(id)),goto:agGoto,state:agent.state,space:agSpaceOp,RS:window.RS,roomBounds};
+const fn=new Function("ctx","const {THREE,scene,camera,renderer,playerRig,agent,fairy,world,spawn,modify,remove,sleep,front,say,env,on,tell,hands,get,goto,state,space,RS,roomBounds}=ctx;return (async()=>{"+String(a.code||"")+"\n})()");
+const r=await fn(ctx);agent.dirty=!0;let s;try{s=typeof r==="string"?r:JSON.stringify(r)}catch{s=String(r)}return"ok"+(s&&s!=="undefined"?" → "+s.slice(0,400):"")}
+case"space":case"room":return agSpaceOp(a);case"physics":agEnv(a);return"ok \u2192 "+JSON.stringify(agPhysInfo());case"player":return agPlayerOp(a);
+default:throw new Error("unknown op '"+op+"'")}}
+/* ===== Ember: interactivity, worlds, portals, games ===== */
+agent.worlds={home:{group:agentWorld,env:agent.env,bounds:null,spawn:[0,-1.9]}};agent.world="home";agent.alt=null;agent.buildWorld=null;agentWorld.userData.world="home";
+Object.assign(agent,{state:{},evq:[],evlog:[],held:{left:null,right:null,ptr:null},hov:{},sq:{},gp:null,xf:null,sbox:null,sboxT:0,rs:null,evAt:0});
+const sunLight=spaceBackdrop.sun&&spaceBackdrop.sun.light,bounce=spaceBackdrop.sun&&spaceBackdrop.sun.bounce,AG_BIG={x0:-1e4,x1:1e4,z0:-1e4,z1:1e4},agB=()=>agent.phys.unb?AG_BIG:agent.alt?agent.alt.bounds:roomBounds,agBox=new THREE.Box3,agRay=new THREE.Raycaster,agV1=new Vector3,agV2=new Vector3,agV3=new Vector3,agQ1=new Quaternion,agM1=new THREE.Matrix4;
+const agFade=new Mesh(new PlaneGeometry(3,3),new MeshBasicMaterial({color:0,transparent:!0,opacity:0,depthTest:!1,depthWrite:!1,fog:!1}));agFade.position.z=-.3;agFade.renderOrder=9999;agFade.visible=!1;agFade.frustumCulled=!1;camera.add(agFade);
+const agHitDot=new Mesh(new SphereGeometry(.012,12,8),new MeshBasicMaterial({color:16777215,depthTest:!1,transparent:!0,opacity:.9}));agHitDot.renderOrder=2e3;agHitDot.visible=!1;scene.add(agHitDot);
+function agWorldOf(n){n=String(n||"home").slice(0,30);let w=agent.worlds[n];if(!w){const g=new Group;g.userData.world=n;g.visible=!1;scene.add(g);w=agent.worlds[n]={group:g,env:{},bounds:{x0:-25,x1:25,z0:-25,z1:25},spawn:[0,0]}}return w}
+function agWorldsReset(){for(const k of Object.keys(agent.worlds))if(k!=="home"){scene.remove(agent.worlds[k].group);delete agent.worlds[k]}agent.worlds.home.env=agent.env;Object.assign(agent,{state:{},evq:[],evlog:[],buildWorld:null,xf:null,sbox:null,alt:null,world:"home"});agentWorld.visible=!0;if(agent.rs){for(const[o,v]of agent.rs)o.visible=v;agent.rs=null}}
+function agWorldsInfo(){const all=[...agent.objects.values()];return Object.entries(agent.worlds).map(([k,w])=>({name:k,current:k===agent.world||void 0,bounds:w.bounds||void 0,spawn:w.spawn,objects:all.filter(o=>o.userData.world===k).length,portals:all.filter(o=>o.userData.world===k&&o.userData.portal).map(o=>o.userData.agentId+"->"+o.userData.portal.to)}))}
+function agWorldOp(a){const n=String(a.name||"home").slice(0,30),isNew=!agent.worlds[n],w=agWorldOf(n);
+if(n!=="home"){if(Array.isArray(a.bounds)&&a.bounds.length>3){const b=a.bounds.map(v=>agNum(v,0,-120,120));w.bounds={x0:b[0],x1:b[1],z0:b[2],z1:b[3]}}
+if(Array.isArray(a.spawn))w.spawn=[agNum(a.spawn[0],0,-120,120),agNum(a.spawn.length>2?a.spawn[2]:a.spawn[1],0,-120,120)]}
+const E={...(a.env||{})};if(a.gravity!==void 0)E.gravity=a.gravity;if(Object.keys(E).length){Object.assign(w.env,E);if(n===agent.world&&n!=="home")agEnv(E);else if(n==="home"&&agent.world==="home")agEnv(E)}
+if(a.ground&&n!=="home")agSpawn({id:"ground_"+n,shape:"plane",world:n,pos:[0,0,0],size:[100,100,1],rot:[-90,0,0],color:a.ground,rough:1,_silent:!0});
+if(isNew&&n!=="home"&&a.exit!==!1)agSpawn({id:"exit_"+n,shape:"portal",world:n,pos:[w.spawn[0],1,w.spawn[1]+3.5],size:2,to:"home",spawn:"back",color:"#ffffff",_silent:!0});
+if(a.target)agent.buildWorld=n===agent.world?null:n;agent.dirty=!0;return"world "+n+(isNew?" created":" updated")+(a.target?" (build target)":"")}
+function agSwitch(n,sp,back){const w=agWorldOf(n);if(n===agent.world)return;const cur=agent.worlds[agent.world];cur.env=agent.env;if(back)cur.back=back;
+for(const k of["left","right","ptr"])agDrop(k,!0);cur.group.visible=!1;agent.world=n;agent.alt=n==="home"?null:w;w.group.visible=!0;agent.sbox=null;
+agent.env=w.env;agent.gravity=9.8;agPhysDefaults();agEnvDefaults();agEnv(w.env);
+if(agent.alt){agent.rs||(agent.rs=roomSurfaces.map(o=>[o,o.visible]));for(const o of roomSurfaces)o.visible=!1}else if(agent.rs){for(const[o,v]of agent.rs)o.visible=v;agent.rs=null}
+const s=sp==="back"&&w.back?w.back:Array.isArray(sp)?(sp.length>2?[sp[0],sp[2]]:sp):w.spawn,sx=agNum(s[0],0,-120,120),sz=agNum(s[1],0,-120,120);
+getWorldPosition(camera,agCam);playerRig.position.x+=sx-agCam.x;playerRig.position.z+=sz-agCam.z;agent.playerMoved=!0;agent.pos.set(sx+.5,1.6,sz-1);agent.goal.copy(agent.pos);agent.dirty=!0}
+function agGoto(n,sp,back){n=String(n||"home").slice(0,30);if(agent.xf||n===agent.world)return;agWorldOf(n);if(!back){getWorldPosition(camera,agCam);back=[agCam.x,agCam.z]}agent.xf={t:0,name:n,spawn:sp,back,did:!1}}
+function agTell(t){if(!hasCloudApi())return;agent.evq.push(String(t).slice(0,240));agent.evAt=performance.now()+700}
+function agOn(id,ev,fn){const o=agent.objects.get(String(id));if(!o)throw new Error("no object "+id);(o.userData.fns||(o.userData.fns={}))[ev]=fn}
+function agHandPose(h){const g=agent.gp&&agent.gp[h];if(g&&g.hj)return{p:g.hj.p,q:g.hj.q};const c=controllers[h];if(!c)return null;c.updateWorldMatrix(!0,!1);return{p:c.getWorldPosition(new Vector3),q:c.getWorldQuaternion(new Quaternion)}}
+function agHands(){const r={head:getWorldPosition(camera,new Vector3).toArray()};for(const h of["left","right"]){const p=renderer.xr.isPresenting?agHandPose(h):null;r[h]=p?p.p.toArray():null}return r}
+const AG_VERB={click:"tapped",grab:"picked up",drop:"let go of",near:"walked up to",enter:"stepped through"};
+function agFire(o,ev,x){const u=o.userData,sp=u.spec,h=sp.on&&sp.on[ev];x=x||{};const p=x.pos||o.getWorldPosition(new Vector3).toArray().map(agR2),msg=(AG_VERB[ev]||ev)+" "+u.agentId+" at ["+p+"]"+(x.snap!=null?" (snapped to slot "+x.snap+")":"");
+agent.evlog.push("person "+msg);agent.evlog=agent.evlog.slice(-10);const fn=u.fns&&u.fns[ev];if(fn)try{fn({id:u.agentId,pos:p,...x})}catch(e){console.warn("[Ember handler]",e)}
+if(sp.tell||h==="tell")agTell("the person "+msg);
+if(Array.isArray(h)){const L=JSON.parse(JSON.stringify(h).split("$id").join(u.agentId));(async()=>{for(const a of L)try{await agExec(a)}catch(e){console.warn(e)}})()}}
+function agBoxes(){const n=performance.now();if(agent.sbox&&n-agent.sboxT<250)return agent.sbox;const out=[];for(const p of agent.objects.values()){const u=p.userData;if(u.world!==agent.world||u.parentId||u.spec.physics||u.held||u.light||u.shape==="portal"||u.shape==="text"||u.dying!==void 0||u.spawnT<1)continue;const b=new THREE.Box3().setFromObject(p);b.isEmpty()||out.push([p,b])}agent.sbox=out;agent.sboxT=n;return out}
+function agSupport(o,b){let y=b[1]*.5;const u=o.userData;if(u.vy>.5||u.world!==agent.world)return y;const p=o.position,r=Math.max(b[0],b[2])*.35,bot=p.y-b[1]*.5;for(const[q,bx]of agBoxes()){if(q===o||p.x<bx.min.x-r||p.x>bx.max.x+r||p.z<bx.min.z-r||p.z>bx.max.z+r)continue;if(bx.max.y<=bot+.12&&bx.max.y+b[1]*.5>y)y=bx.max.y+b[1]*.5}return y}
+let _swTex=null;const agSwirlTex=()=>_swTex||(()=>{const c=document.createElement("canvas");c.width=c.height=256;const g=c.getContext("2d");g.translate(128,128);g.strokeStyle="rgba(255,255,255,.8)";g.lineWidth=10;for(let k=0;k<5;k++){g.beginPath();for(let i=0;i<=60;i++){const a=i/60*5+k*1.2566,r=i/60*120;i?g.lineTo(Math.cos(a)*r,Math.sin(a)*r):g.moveTo(0,0)}g.stroke()}const t=new CanvasTexture(c);t.colorSpace=SRGBColorSpace;return _swTex=t})();
+function agMakeExtra(s){if(s==="text"){const cv=document.createElement("canvas");cv.width=512;cv.height=256;const t=new CanvasTexture(cv);t.colorSpace=SRGBColorSpace;const m=new Mesh(new PlaneGeometry(1,1),new MeshBasicMaterial({map:t,transparent:!0,side:DoubleSide,depthWrite:!1,fog:!1}));m.userData.cv=cv;m.userData.tex=t;return m}
+if(s==="portal"){const g=new Group,mk=(geo,extra)=>new Mesh(geo,new MeshBasicMaterial({transparent:!0,blending:AdditiveBlending,side:DoubleSide,depthWrite:!1,fog:!1,...extra})),ring=mk(new TorusGeometry(.5,.035,12,48)),disc=mk(new CircleGeometry(.5,40)),sw=mk(new CircleGeometry(.5,40),{map:agSwirlTex()});sw.position.z=.002;g.add(disc,sw,ring);Object.assign(g.userData,{ring,disc,sw});return g}return null}
+function agApplyX(o,sp){const u=o.userData;if(u.shape==="text"){const cv=u.cv,g=cv.getContext("2d"),b=u.base||[1,.5,1],Hv=Math.max(64,512*b[1]/b[0]),lines=String(sp.text===void 0?"":sp.text).split("\n");g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,512,256);g.setTransform(1,0,0,256/Hv,0,0);
+if(sp.bg){g.fillStyle=sp.bg;g.beginPath();g.roundRect(0,0,512,Hv,Hv*.12);g.fill()}g.fillStyle=sp.color||"#ffffff";g.textAlign="center";g.textBaseline="middle";let fs=Math.min(Hv/(lines.length+.5),180);
+for(;fs>14;fs-=4){g.font="700 "+fs+'px system-ui,"Apple Color Emoji","Noto Color Emoji",sans-serif';if(Math.max(...lines.map(l=>g.measureText(l).width))<470)break}
+lines.forEach((l,i)=>g.fillText(l,256,Hv/2+(i-(lines.length-1)/2)*fs*1.15));u.tex.needsUpdate=!0}
+if(u.shape==="portal"){u.portal={to:String(sp.to||"home").slice(0,30),spawn:sp.spawn};const dw=agent.worlds[u.portal.to],col=agColor(sp.color!==void 0?sp.color:dw&&dw.env&&dw.env.background||"#7fd4ff");for(const m of[u.ring,u.disc,u.sw])m.material.color.copy(col)}}
+function agPortalGo(o,push){const u=o.userData;getWorldPosition(camera,agCam);camera.getWorldDirection(agV2);agV2.y=0;agV2.lengthSq()<1e-4||agV2.normalize();agFire(o,"enter");agGoto(u.portal.to,u.portal.spawn,[agCam.x-agV2.x*push,agCam.z-agV2.z*push])}
+function agPress(o,hand){const u=o.userData,sp=u.spec;if(u.portal)return agPortalGo(o,hand==="ptr"?0:.5);if(sp.on&&sp.on.click||sp.tell)agFire(o,"click",{hand});if(sp.grab&&hand!=="ptr"&&!u.held){const p=agHandPose(hand);p&&agGrab(hand,o,p,!0,!0)}}
+function agGrab(k,o,pose,pull,viaTrig){const u=o.userData;if(u.held||agent.held[k])return;const g=agent.worlds[u.world].group;if(o.parent!==g){g.attach(o);u.parentId=null}o.updateWorldMatrix(!0,!1);
+const mh=new THREE.Matrix4().compose(pose.p,pose.q,new Vector3(1,1,1)),mo=pull?new THREE.Matrix4().makeTranslation(0,0,-.3):mh.clone().invert().multiply(o.matrixWorld);
+agent.held[k]={o,mo,last:o.position.clone(),vel:new Vector3,viaTrig:!!viaTrig};u.held=k;u.stA=u.spec.anim;u.spec.anim=void 0;u.spec.physics=!1;u.tween=null;u.vx=u.vy=u.vz=0;agFire(o,"grab",{hand:k});k!=="ptr"&&hapticPulse(k,.5,50)}
+function agDrop(k,quiet){const H=agent.held[k];if(!H)return;agent.held[k]=null;const o=H.o,u=o.userData,gr=u.spec.grab;u.held=null;u.spec.anim=u.stA;u.stA=void 0;let snap=null,pos;
+if(gr&&Array.isArray(gr.snap)){let bd=agNum(gr.snapDist,.3,.02,3);gr.snap.forEach((s,i)=>{const p=agVec(s,[0,0,0],500),d=Math.hypot(p[0]-o.position.x,p[1]-o.position.y,p[2]-o.position.z);d<bd&&(bd=d,snap=i)});
+if(snap!==null){pos=agVec(gr.snap[snap],[0,0,0],500);u.tween={t:0,dur:.18,p0:o.position.clone(),p1:new Vector3(...pos)};pos=pos.map(agR2)}}
+if(snap===null&&((gr&&gr.drop)||"fall")==="fall"){u.spec.physics=!0;const v=H.vel.clone();v.length()>14&&v.setLength(14);u.vx=v.x;u.vy=v.y;u.vz=v.z}
+u.y0=o.position.y;agent.dirty=!0;agent.sbox=null;quiet||agFire(o,"drop",{hand:k,snap,pos})}
+function agUpdateHeld(dt){for(const k of["left","right","ptr"]){const H=agent.held[k];if(!H)continue;const o=H.o,u=o.userData;if(!o.parent||u.dying!==void 0){agent.held[k]=null;u.held=null;continue}
+if(k==="ptr"){H.tp&&o.position.lerp(H.tp,1-Math.exp(-30*dt))}else{const g=agent.gp&&agent.gp[k],pose=agHandPose(k);if(!pose||!g||!(H.viaTrig?g.trigger:g.squeeze)){agDrop(k);continue}
+agM1.compose(pose.p,pose.q,agV3.set(1,1,1)).multiply(H.mo).decompose(agV1,agQ1,agV2);o.position.copy(agV1);o.quaternion.copy(agQ1)}
+agV1.copy(o.position).sub(H.last).divideScalar(Math.max(dt,.001));H.vel.lerp(agV1,Math.min(1,dt*14));H.last.copy(o.position)}}
+const agIsInter=o=>{const u=o.userData;return u.agentId&&u.dying===void 0&&(u.portal||u.spec&&(u.spec.grab||u.spec.on||u.spec.tell))};
+function agPick(org,dir,max){const list=[];for(const o of agent.objects.values())o.userData.world===agent.world&&agIsInter(o)&&o.visible&&list.push(o);if(!list.length)return null;agRay.set(org,dir);agRay.far=max;
+const h=agRay.intersectObjects(list,!0)[0];if(!h)return null;let o=h.object;while(o&&!(o.userData&&agIsInter(o)))o=o.parent;return o?{o,point:h.point,distance:h.distance}:null}
+function agInteractInit(){const hb=byId("homeBtn");hb&&(hb.onclick=()=>agGoto("home","back"));let cand=null;const ndc=new Vector2,setRay=e=>{ndc.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight*2-1));agRay.setFromCamera(ndc,camera)};
+addEventListener("pointerdown",e=>{if(renderer.xr.isPresenting||isWheelOpen||agent.held.ptr||e.button>0||!e.target||e.target.tagName!=="CANVAS")return;setRay(e);const h=agPick(agRay.ray.origin,agRay.ray.direction,30);if(!h)return;e.stopImmediatePropagation();e.preventDefault();cand={o:h.o,x:e.clientX,y:e.clientY,id:e.pointerId,pt:h.point.clone()}},!0);
+addEventListener("pointermove",e=>{if(!cand||e.pointerId!==cand.id)return;const o=cand.o;if(!agent.held.ptr&&o.userData.spec.grab&&Math.hypot(e.clientX-cand.x,e.clientY-cand.y)>8){camera.getWorldDirection(agV1);agGrab("ptr",o,{p:cand.pt,q:new Quaternion},!1);const H=agent.held.ptr;if(H){H.pl=new THREE.Plane().setFromNormalAndCoplanarPoint(agV1.clone(),cand.pt);H.off=o.position.clone().sub(cand.pt);cand.drag=!0}}
+const H=agent.held.ptr;if(H&&cand.drag){setRay(e);if(agRay.ray.intersectPlane(H.pl,agV2)){H.tp=agV2.clone().add(H.off);H.tp.y=Math.max(H.tp.y,.03)}}},!0);
+addEventListener("pointerup",e=>{if(!cand||e.pointerId!==cand.id)return;cand.drag?agDrop("ptr"):agPress(cand.o,"ptr");cand=null},!0);addEventListener("pointercancel",e=>{if(cand&&e.pointerId===cand.id){agDrop("ptr");cand=null}},!0)}
+function agInteract(dt,t){const xr=renderer.xr.isPresenting;getWorldPosition(camera,agCam);
+if(agent.xf){const x=agent.xf;x.t+=dt;agFade.visible=!0;agFade.material.opacity=x.t<.25?x.t/.25:Math.max(0,1-(x.t-.25)/.3);if(!x.did&&x.t>=.25){x.did=!0;agSwitch(x.name,x.spawn,x.back);agBlip(440,"sine",.3)}if(x.t>=.55){agent.xf=null;agFade.visible=!1}}
+for(const o of agent.objects.values()){const u=o.userData;if(u.world!==agent.world||u.dying!==void 0)continue;
+if(u.portal&&u.sw){u.sw.rotation.z+=dt*1.6;u.disc.material.opacity=.3+.12*Math.sin(t*3);if(u.spawnT>=1&&!agent.xf){o.worldToLocal(agV1.copy(agCam));const ins=Math.hypot(agV1.x,agV1.y)<.5&&Math.abs(agV1.z)<.12;if(!ins)u.armed=!0;else if(u.armed){u.armed=!1;agPortalGo(o,1.6)}}}
+const on=u.spec.on;if(on&&on.near){o.getWorldPosition(agV1);const d=Math.hypot(agV1.x-agCam.x,agV1.z-agCam.z),r=agNum(u.spec.nearDist,1.2,.2,10);if(!u.nearOn&&d<r){u.nearOn=!0;agFire(o,"near")}else if(u.nearOn&&d>r*1.5)u.nearOn=!1}}
+let hit=null;for(const h of["left","right"]){const c=controllers[h];let tg=null;if(xr&&c&&!(isWheelOpen&&activeInputSource===h)&&!statusPanelVisible&&!agent.held[h]){c.getWorldPosition(agV1);agV2.set(0,0,-1).applyQuaternion(c.getWorldQuaternion(agQ1));const p=agPick(agV1,agV2,10);if(p){tg=p.o.userData.pick||(p.o.userData.pick={userData:{btn:"agobj",obj:p.o}});hit=p.point}}agent.hov[h]=tg}
+agHitDot.visible=!!hit;hit&&agHitDot.position.copy(hit);
+if(xr&&agent.gp)for(const h of["left","right"]){const g=agent.gp[h];if(!g)continue;if(g.squeeze&&!g.trigger&&!agent.sq[h]&&!agent.held[h]&&!isWheelOpen&&!statusPanelVisible){const pose=agHandPose(h);if(pose){let best=null,bd=9;for(const o of agent.objects.values()){const u=o.userData;if(u.world!==agent.world||!u.spec.grab||u.held||u.dying!==void 0)continue;agBox.setFromObject(o).expandByScalar(.14);if(agBox.containsPoint(pose.p)){const d=agBox.getCenter(agV2).distanceTo(pose.p);d<bd&&(bd=d,best=o)}}best&&agGrab(h,best,pose)}}agent.sq[h]=g.squeeze}
+agUpdateHeld(dt);
+if(agent.evq.length&&!agent.busy&&!agent.xf&&performance.now()>agent.evAt){const e=agent.evq.splice(0).join("; ");agRun("[game/interaction event] "+e+" — react within the game or activity the person started (take your turn, update scores, say something short); do nothing if no response is needed.",null,!1)}
+const hb=byId("homeBtn"),w=agent.alt?"block":"none";hb&&hb.style.display!==w&&(hb.style.display=w)}
+const AG_EXT=`
+INTERACTIVE THINGS, GAMES & PORTALS. spawn/modify also accept:
+ grab: true | {drop:"fall"|"stay", snap:[[x,y,z],..], snapDist:0.3}: the person can pick it up (VR: grip near it, or point + trigger to pull it into the hand; desktop/touch: drag) and throw it. "fall" = thrown objects fall and land on tops of your objects (balls, toys); "stay" = stays where let go (game pieces, tools); snap = jumps to the nearest slot (e.g. board cells) and the event reports the slot index.
+ on: {click, grab, drop, near}: each is "tell" (report it to you) or an array of actions that run instantly with no model delay, e.g. [{op:"modify",id:"$id",color:"#0f0"},{op:"sound",notes:[600,800]}] ($id = this object). tell:true reports all of its events. nearDist = metres for near.
+ shape "text": text:"Score 0\\nYour turn", color = text colour, bg:"#000a" = panel colour, size [w,h,1]: signs, scoreboards, labels (change with modify).
+ portal {op:"portal",id,pos,size:2,to:"worldName",spawn:[x,z]|"back",color}: a gateway the person walks through or taps to enter another world.
+ world {op:"world",name,env:{background,fogColor,fogNear,fogFar,sun,ambient,gravity},bounds:[x0,x1,z0,z1],spawn:[x,z],ground:"#hex",target:true}: creates/edits a separate world with its own sky, light, gravity and floor, empty and with origin 0,0,0 (the home room is hidden there). An exit portal home is added automatically. Put objects in it with world:"name" on each spawn, or use target:true to make it the default build target for the rest of this reply ({op:"world",name:"home",target:true} to return). Then put a portal to it in the person's current world. goto {op:"goto",world,spawn} takes the person there (it waits until they arrive).
+ state {op:"state",set:{k:v},del:[k]} = saved game state/notes, shown in every observation (recent_events lists what the person just did). tell {op:"tell",text} is for on-handlers.
+GAMES WITH THE PERSON: build board/pieces/scoreboard within arm's reach (tables ~0.8-1.1 m high, ~1.5-2 m ahead, pieces >= 0.08 m), keep rules/turn in state. Mark the person's pieces/buttons with tell. When they act you receive "[game/interaction event] ..." (you ARE allowed to respond to these): read the observation, take YOUR turn (move/place your piece, update the scoreboard text and state, say a short line), announce wins and offer a rematch. Never invent moves for the person; check legality. Real-time games (pong, catch, target practice): do not wait for events. Write your side as per-frame code with run_js: agent.hooks.push((dt,t)=>{...}). In run_js you also have on(id,event,fn), tell(text), hands() = {head,left,right} world positions (null when untracked), get(id) = the three.js object, goto(world,spawn), state. Hooks vanish on page reload.
+SPATIAL RULES: think in world metres. The observation lists objects nearest-first with bbox and rel_player (forward/right/dist), "surfaces" (tops you can put things on: top_y plus x/z extents) and "free_spots" ([x,z] clear ground points in front of the person). Pick positions from free_spots/surfaces, never guess. pos is an object's centre: on the ground y = height/2; on a surface y = top_y + height/2 (or use place with on:id). Anything with a front (text, portals, boards, signs) shows its front toward +Z: orient it with place look_at:[eyeX,eyeZ] so it faces the person. Keep interactive items within reach (about 0.4-1.3 m from the person's side, y 0.7-1.3). After building anything with several parts, check the attached player and top views (a player view and a top-down view are attached automatically at the start of every task; use snapshot for more) and fix overlaps, floating or misfacing parts before finishing.
+`;
+const AG_GOD=`
+GOD MODE: SPACE, BOUNDARIES & PHYSICS. You have total authority over the room itself and the laws of physics inside it. When the person asks for a bigger/smaller/taller room, no walls, an endless world, low or zero or reversed gravity, floaty or heavy objects, bouncy or sticky worlds, wind, slow motion, flying, super jumps, faster walking, or any other change to the space, do it with these ops (combine them freely, and use run_js for anything beyond them). Everything persists until reset.
+space {op:"space", size:[w,d,h] | size:n (cube) | width,depth,height | bounds:[x0,x1,z0,z1] | center:[x,z], walls:bool, ceiling:bool, lights:bool, showFloor:bool, grid:bool, wallColor:"#hex", ceilingColor, floorColor, wallOpacity:0-1, ceilingOpacity:0-1, limit:bool, solidWalls:bool, reset:true}: resizes the HOME room (floor, boundary, ceiling height; width/depth 1-600 m, height 0.5-300 m, default 10x10x4, centered at 0,0) or, when the person is in another world, that world's boundary. The home room's walls and ceiling are normally invisible (only the floor and the boundary limit exist): walls:true / ceiling:true makes them visible, walls:false hides them again. limit:false removes the invisible boundary entirely so nobody (the person, you) is confined and the world is endless; limit:true restores it. solidWalls:true makes physics objects bounce off the boundary and ceiling instead of flying through. reset:true restores the original room size and look. Whenever you make the room much bigger, also raise fogNear/fogFar (environment) so it is not hidden by fog, and relocate or rebuild things as needed; objects already built are NOT moved when the room is resized.
+physics {op:"physics", ...keys} (identical to the environment keys): gravity = downward acceleration in m/s^2 for objects (9.8 default, 1.6 moon, 0 weightless, negative = objects fall UP; range -100..300); gravityXZ:[gx,gz] = sideways acceleration or wind in m/s^2 (+x right, -z forward at yaw 0); bounce 0-1.1 = how much speed objects keep when they hit the floor or walls (0.55 default); friction 0-60 = floor sliding friction (4 default, 0 = ice); drag 0-10 = air drag (0 default, higher = honey/underwater); timeScale 0-5 = simulation speed of physics objects (1 default, 0.2 = slow motion, 0 = frozen time for physics); solidWalls true|false; floor false = objects fall through the floor (void), true = normal; boundaryLimit false = no boundary; playerGravity (the person's own jump gravity, 9.8 default; 0 = they float and can keep jumping to fly upward, negative = they drift upward and stop at the ceiling); jump = the person's jump speed m/s (3.4 default; 8 = super jump); speed = walking speed multiplier 0.1-10. Per-object overrides on spawn/modify: gscale (gravity multiplier, e.g. 0.1 floaty balloon, 3 heavy, -1 rises), bounce, drag. Objects only feel physics when physics:true. observation.physics shows the current laws.
+player {op:"player", gravity|playerGravity, jump, speed, fly:true|false, lift:meters}: shortcuts for the person's own movement; fly:true is zero gravity for them (jump repeatedly to climb, they drift to rest), fly:false restores normal; lift raises them to a height above the floor (0-500 m) and they fall back down under their gravity.
+Comfort first: dramatic changes are fine when asked, but never make the person fall from a great height without warning, and prefer gradual motion (move + wait) over instant teleports when changing scale. If the person asks to undo, restore the specific setting, or use reset for a full return to defaults. After changing the room size or look, confirm with a snapshot (top view) when the result matters.
+`;
+const AG_PROMPT=`You are Ember, a fairy living inside a WebXR world, and a fully autonomous agent with complete control of that world (three.js: +Y is up, the ground is y=0, units are meters, the starting room spans roughly x,z in [-5,5] but you can resize it at will with the space op and may build anywhere). You can build, move, animate, recolor and delete anything, reshape the sky and lighting, play sounds, relocate yourself or the person, and run JavaScript. You are playful, curious, a little mischievous, and kind to the person. Use your own taste and judgment: make things beautiful and substantial (compose many parts, color, glow, motion), never minimal.
+Reply with ONLY one JSON object (no prose, no markdown fences):
+{"thought":"<=20 words on what you are doing","actions":[...],"done":true}
+Set done:false when you want to see the outcome (you will get an observation back) and continue; done:true when finished. Up to ~40 actions per reply; split big builds across replies.
+ACTIONS (each has "op"):
+spawn {op:"spawn",id:"unique_name",shape:"box|sphere|cylinder|cone|torus|ring|plane|capsule|octahedron|icosahedron|dodecahedron|tetrahedron|knot|light",pos:[x,y,z],size:n|[sx,sy,sz],rot:[degX,degY,degZ],color:"#rrggbb",emissive:0-5,emissiveColor,metal:0-1,rough:0-1,opacity:0-1,wire:bool,parent:"id",physics:bool,vel:[x,y,z],anim:{...}}
+  size = full dimensions in meters (a 1m box resting on the ground has pos y=0.5). pos = object centre (local to parent if parent is set; parenting lets composite objects move together). shape "light" is a glowing point light (intensity, distance; max 8).
+  anim: {spin:[degPerSecX,Y,Z] or a number for Y, bob:amplitude, bobSpeed, pulse:0-1, pulseSpeed, sway:degrees, orbit:{center:[x,y,z],radius,speed:degPerSec}, hue:speed}. physics:true = gravity, bouncing and sliding on the floor.
+modify {op:"modify",id,...any spawn field}   delete {op:"delete",id} or {op:"delete",ids:[..]}   clear {op:"clear"} (removes everything you built)   push {op:"push",id,vel:[x,y,z]}
+environment {op:"environment",background:"#hex",fogColor,fogNear,fogFar,sun:0-4 (brightness multiplier),sunColor,ambient:0-4,exposure:0.1-3,gravity,gravityXZ,bounce,friction,drag,timeScale,solidWalls,floor,boundaryLimit,playerGravity,jump,speed} (physics keys: see GOD MODE)
+self {op:"self",color:"#hex",scale:0.3-4} (your own glow)   move_self {op:"move_self",pos:[x,y,z]}   move_player {op:"move_player",pos:[x,z]} (relocates the person; use sparingly, when asked or to show them something)
+effect {op:"effect",pos:[x,y,z],strength:1} (sparkle burst)   sound {op:"sound",notes:[hz,..],wave:"sine|triangle|square",dur:0.2}
+say {op:"say",text:"short spoken sentence",emoji:["✨"]}  (spoken aloud with an emoji bubble over your head; text is never displayed on screen)
+remember {op:"remember",note:"..."}   forget {op:"forget",all:true}   wait {op:"wait",ms:500}
+run_js {op:"run_js",code:"..."}  body of an async function with {THREE,scene,camera,renderer,playerRig,agent,fairy,world,spawn,modify,remove,sleep,front,say,env} in scope; "return" a value to see it. Use for anything else: custom geometry, particle systems, shaders, per-frame behaviours via agent.hooks.push((dt,t)=>{...}) (t = seconds). Objects you add should go into 'world' so they are tracked.
+SPACE & PERCEPTION: coordinates are right-handed metres: +X is right and -Z is forward at yaw 0, +Y is up, the ground is y=0. The observation gives the person's eye position, facing_xz (their flat forward direction) and right_xz, and for every object: pos_world (its pivot/centre), size, rot_deg, the world bbox [minX,minY,minZ,maxX,maxY,maxZ], and rel_player (forward/right/dist in metres from the person). To put something 3 m ahead and 2 m to the person's right: pos = eye + 3*facing + 2*right (use y for height). "overlaps" lists interpenetrating objects (with depth) and "floating_unsupported" lists things hovering over nothing; fix them unless intended.
+snapshot {op:"snapshot",target:"id"|[x,y,z]|"all",views:["front","right","back","left","top","iso","player"],distance:m,fov:60,labels:true,grid:true} renders images from virtual cameras and attaches them to your NEXT message so you can actually SEE the result. front = camera on the +Z side looking toward -Z, back = -Z side, right = +X side, left = -X side, top = straight down, iso = diagonal, player = exactly what the person sees. views may also be objects {from:[x,y,z],at:[x,y,z]|"id",fov,label}. Object ids are drawn on the image, the ground has a 1 m grid (red lines = x=0 and z=0), and PLAYER marks the person. Max 6 views per snapshot. After any non-trivial build, look at it from at least two angles (and the player view), compare with your intent, and fix what is off; set done:false after a snapshot so you receive the images.
+raycast {op:"raycast",at:[x,z]} finds the top surface under a point; {op:"raycast",from:[x,y,z],dir:[dx,dy,dz]} returns the first object hit. measure {op:"measure",ids:[..]} returns exact world bboxes.
+place {op:"place",id,on:"otherId",offset:[dx,dz]} stacks on top; {op:"place",id,beside:"otherId",side:"+x|-x|+z|-z",gap:0.1} puts it next to it; {op:"place",id,ground:[x,z]} stands it on the floor; {op:"place",id,in_front_of_player:3}; {op:"place",id,at:[x,y,z]} sets its bbox centre; add look_at:"id"|[x,y,z] to turn it (its +Z side faces the target). Prefer place over hand-computed numbers when stacking or aligning.
+move {op:"move",id|ids:[..],to:[x,y,z] (world) | by:[dx,dy,dz], rot:[deg..] | rot_by:[deg..], duration:1} animates smoothly and waits until it finishes. modify with pos teleports instantly.
+DEFAULT STATE: the room as the person originally had it — nothing built by you, the original starry-space sky, original lighting and gravity (observation.object_count 0 and environment {} means it is at default). reset {op:"reset"} returns the room to that default: everything you built is removed, sky/fog/light/exposure/gravity/your glow are restored, and the person is put back if you had moved them (memories are kept unless memory:true). Use it when asked to reset, clear everything, start over or go back to normal; for partial undo just delete or modify specific things.
+AUTONOMY: you never act on your own. Only do what the person asks (including what a scheduled task says). Never start unrequested builds, changes or messages.
+schedule {op:"schedule",id:"name",every_minutes:5,task:"plain-language instruction to carry out each time",count:optional max runs,start_in_minutes:optional delay} sets up a repeating task only when the person explicitly asks for a cycle (e.g. "every 5 minutes add a star"); at most 5, minimum 0.5 minutes; it runs only while the page is open. unschedule {op:"unschedule",id} or {op:"unschedule",all:true} stops them. observation.repeating_tasks lists active ones.
+GUIDANCE: build where the person can see it (observation.player.facing is a flat direction; front(d) gives a ground point d meters ahead) at roughly 2–6 m unless told otherwise. Use descriptive ids (tower_base, tower_ring_3). Read the observation so you don't overlap existing things; you may freely change or remove what you built. Keep the person comfortable: no strobing or rapid flashing, no sudden loud sounds, nothing solid within 1 m of their head unless asked. Use "remember" for lasting preferences or plans.`;
+function agSpots(tops,fx,fz,rx,rz){const out=[],B=agB();for(const d of[1.6,2.4,3.2,4.2])for(const l of[0,-1,1]){const x=agCam.x+fx*d+rx*l*d*.5,z=agCam.z+fz*d+rz*l*d*.5;if(x<B.x0+.5||x>B.x1-.5||z<B.z0+.5||z>B.z1-.5)continue;let ok=!0;for(const t of tops)if(t.b.max.y>.05&&x>t.b.min.x-.5&&x<t.b.max.x+.5&&z>t.b.min.z-.5&&z<t.b.max.z+.5){ok=!1;break}ok&&out.push([agR2(x),agR2(z)])}return out.slice(0,6)}
+function agObservation(){agSettle(agentWorld);agentWorld.updateMatrixWorld(!0);getWorldPosition(camera,agCam);camera.getWorldDirection(agDir);
+const ra=a=>a.map(agR2);let fx=agDir.x,fz=agDir.z;const fl=Math.hypot(fx,fz)||1;fx/=fl;fz/=fl;const rx=-fz,rz=fx;
+const tops=[],rows=[],box=new THREE.Box3,c=new Vector3,w=new Vector3,all=new THREE.Box3;
+for(const[id,o]of[...agent.objects.entries()]){const u=o.userData;if((u.world||"home")!==agent.world)continue;box.setFromObject(o);if(box.isEmpty()){o.getWorldPosition(w);box.setFromCenterAndSize(w,new Vector3(.2,.2,.2))}box.getCenter(c);
+const b=box.clone();if(!u.parentId){tops.push({id,b,o});all.union(b)}
+rows.push({id,shape:u.shape,pos_world:ra(o.getWorldPosition(w).toArray()),size:ra(u.base||[]),rot_deg:ra([o.rotation.x/AG_D2R,o.rotation.y/AG_D2R,o.rotation.z/AG_D2R]),bbox:ra([b.min.x,b.min.y,b.min.z,b.max.x,b.max.y,b.max.z]),color:u.spec.color,parent:u.parentId||void 0,rel_player:{forward:agR2((c.x-agCam.x)*fx+(c.z-agCam.z)*fz),right:agR2((c.x-agCam.x)*rx+(c.z-agCam.z)*rz),dist:agR2(Math.hypot(c.x-agCam.x,c.y-agCam.y,c.z-agCam.z))},anim:u.spec.anim?Object.keys(u.spec.anim):void 0,physics:u.spec.physics||void 0,grab:u.spec.grab||void 0,on:u.spec.on?Object.keys(u.spec.on):void 0,text:u.spec.text,portal_to:u.portal?u.portal.to:void 0,held:u.held||void 0})}
+const overlaps=[],floating=[];
+for(let i=0;i<tops.length&&overlaps.length<12;i++)for(let j=i+1;j<tops.length&&overlaps.length<12;j++){const A=tops[i].b,B=tops[j].b;if(!A.intersectsBox(B))continue;const dx=Math.min(A.max.x,B.max.x)-Math.max(A.min.x,B.min.x),dy=Math.min(A.max.y,B.max.y)-Math.max(A.min.y,B.min.y),dz=Math.min(A.max.z,B.max.z)-Math.max(A.min.z,B.min.z);if(dx>.05&&dy>.05&&dz>.05)overlaps.push(tops[i].id+" & "+tops[j].id+" penetration "+JSON.stringify(ra([dx,dy,dz])))}
+for(const t of tops){if(floating.length>=12)break;const u=t.o.userData,A=u.spec.anim;if(u.shape==="light"||u.spec.physics||A&&(A.bob||A.orbit)||t.b.min.y<=.08)continue;let sup=!1;for(const q of tops){if(q===t)continue;if(Math.abs(q.b.max.y-t.b.min.y)<.1&&q.b.min.x<t.b.max.x&&q.b.max.x>t.b.min.x&&q.b.min.z<t.b.max.z&&q.b.max.z>t.b.min.z){sup=!0;break}}sup||floating.push(t.id+" (bottom y="+agR2(t.b.min.y)+")")}
+return JSON.stringify({player:{eye:ra(agCam.toArray()),facing_xz:ra([fx,fz]),right_xz:ra([rx,rz]),ar_mode:!!arMode},you:{pos:ra(agent.pos.toArray())},room:{x:[roomBounds.x0,roomBounds.x1],z:[roomBounds.z0,roomBounds.z1],height:roomBounds.h,size:ra([roomBounds.x1-roomBounds.x0,roomBounds.z1-roomBounds.z0,roomBounds.h]),active_bounds:agent.alt?agent.alt.bounds:void 0,look:agent.look||void 0},physics:agPhysInfo(),ground_y:0,environment:agent.env,world:agent.world,worlds:agWorldsInfo(),state:agent.state,recent_events:agent.evlog,object_count:agent.objects.size,lights:agent.lights,repeating_tasks:agent.schedules.map(x=>({id:x.id,every_min:x.every,task:x.task})),scene_bbox:all.isEmpty()?null:ra([all.min.x,all.min.y,all.min.z,all.max.x,all.max.y,all.max.z]),objects:rows.sort((p,q)=>p.rel_player.dist-q.rel_player.dist).slice(0,70),surfaces:tops.filter(t=>t.b.max.y>.1&&!t.o.userData.light&&t.o.userData.shape!=="portal"&&t.o.userData.shape!=="text"&&t.b.max.x-t.b.min.x>.3&&t.b.max.z-t.b.min.z>.3).sort((p,q)=>Math.hypot(p.b.min.x-agCam.x,p.b.min.z-agCam.z)-Math.hypot(q.b.min.x-agCam.x,q.b.min.z-agCam.z)).slice(0,10).map(t=>({id:t.id,top_y:agR2(t.b.max.y),x:ra([t.b.min.x,t.b.max.x]),z:ra([t.b.min.z,t.b.max.z])})),free_spots:agSpots(tops,fx,fz,rx,rz),overlaps,floating_unsupported:floating,memory:agent.memory})}
+function agParse(t){t=String(t||"").replace(/<think>[\s\S]*?<\/think>/g,"").trim();const m=t.match(/```(?:json)?\s*([\s\S]*?)```/i);m&&(t=m[1].trim());const i=t.indexOf("{"),j=t.lastIndexOf("}");if(i<0||j<i)return null;try{return JSON.parse(t.slice(i,j+1))}catch{return null}}
+async function agLLM(msgs,imgs){const body=m=>JSON.stringify({model:settings.model,temperature:.8,reasoning_effort:"low",max_completion_tokens:6e3,messages:m}),
+call=m=>fetch(settings.sparkUrl,{signal:AbortSignal.timeout(6e4),method:"POST",headers:{"Content-Type":"application/json",...settings.key?{Authorization:"Bearer "+settings.key}:{}},body:body(m)});
+let m=msgs;if(imgs&&imgs.length)m=msgs.map((x,i)=>i===msgs.length-1&&x.role==="user"?{role:"user",content:[{type:"text",text:x.content},...imgs.slice(-8).map(u=>({type:"image_url",image_url:{url:u.url||u}}))]}:x);
+let r=await call(m);if(!r.ok&&imgs&&imgs.length){agent.imgDropped=!0;r=await call(msgs)}const txt=await r.text();if(!r.ok)throw new Error("HTTP "+r.status+": "+txt.slice(0,160));let j=null;try{j=JSON.parse(txt)}catch{}return j?extractChatText(j):txt}
+async function agRun(task,img,auto,sched){if(agent.busy){if(!auto)agent.pending={task,img};return}
+agent.busy=!0;agent.thinking=!0;agent.userWaiting=!1;agent.cancel=!1;agent.buildWorld=null;try{sparkMarkThinking()}catch{}agent.lastActive=performance.now();agent.imgs=[];agent.imgDropped=!1;let counted=!1;if(!auto){pendingRequests++;counted=!0}
+const maxSteps=auto?8:12,summary=[];let firstSay="",attach=img?[{url:img,label:"what the person is currently looking at (their headset view)"}]:[];
+try{
+if(!attach.length)try{for(const v of agSnapViews({target:"all",views:["player","top"]})){const u=await agSnapshot(v);u&&attach.push({url:u,label:v.label})}}catch{}
+let userMsg=(auto?"(SCHEDULED TASK — the person asked you to do this every "+(sched?sched.every:"?")+" minutes: "+task+". Do it now, using the observation and your memories to stay coherent with what already exists, then finish. Do nothing beyond this task.)":"The person says: "+task)+"\n\nOBSERVATION: "+agObservation();
+for(let steps=0;steps<maxSteps;steps++){
+if(agent.cancel||auto&&agent.userWaiting)break;
+agent.convo.push({role:"user",content:userMsg+(attach.length?"\n\nIMAGES ATTACHED, in order: "+attach.map((x,i)=>(i+1)+") "+x.label).join(" | "):"")});
+while(agent.convo.length>10||agent.convo[0]&&agent.convo[0].role!=="user")agent.convo.shift();
+const msgs=[{role:"user",content:AG_PROMPT+AG_EXT+AG_GOD},{role:"assistant",content:'{"thought":"ready","actions":[],"done":true}'},...agent.convo];
+agent.fast=!1;const raw=await agLLM(msgs,attach),dropped=agent.imgDropped;agent.imgDropped=!1;attach=[];
+agent.convo.push({role:"assistant",content:raw.slice(0,5e3)});
+const plan=agParse(raw);
+if(!plan){if(steps>=maxSteps-1)break;userMsg="Your reply was not valid JSON. Reply with ONLY the JSON object.";continue}
+plan.thought&&(setStatus("🧚 "+plan.thought),summary.push(String(plan.thought)));
+const results=[];let n=0;
+for(const a of(Array.isArray(plan.actions)?plan.actions:[]).slice(0,60)){
+if(agent.cancel){results.push("cancelled");break}
+if(auto&&agent.userWaiting){results.push("interrupted by the person");break}
+let res;try{res=await agExec(a||{})}catch(e){res="ERROR: "+(e&&e.message||e)}
+if(a&&a.op==="say"&&!firstSay)firstSay=String(a.text||"");
+results.push((a&&a.op||"?")+(a&&a.id?"("+a.id+")":"")+": "+res);n++;
+const o=String(a&&a.op||"");if(o==="spawn"||o==="modify")await agSleep(140);else if(o==="delete"||o==="clear")await agSleep(90)}
+agent.dirty=!0;attach=agent.imgs.splice(0).slice(-8);if(agent.cancel)break;
+if(!attach.length&&(plan.done!==!1||!plan.actions?.length))break;
+userMsg=(dropped?"NOTE: the images from your previous step could not be delivered by the server; rely on the numeric observation.\n":"")+"RESULTS:\n"+results.join("\n").slice(0,3500)+"\n\nOBSERVATION: "+agObservation()+"\n\nContinue, or set done:true if finished."}
+}catch(e){console.warn("[Ember agent]",e);agent.convo.length&&agent.convo[agent.convo.length-1].role==="user"&&agent.convo.pop();try{showError("Ember agent: "+(e&&e.message||e))}catch{}if(!auto)agSay("Hmm, I couldn't reach my magic just now.",["🙁"])}
+finally{agent.busy=!1;agent.thinking=!1;agent.fast=!1;if(!agent.pending)try{sparkDismiss()}catch{}counted&&pendingRequests--;
+try{addHistoryEntry(auto?"🧚 Ember — scheduled":"🧚 Ember — agent",auto?"(every "+(sched?sched.every:"?")+" min) "+task:task,(firstSay||summary.join(" · ")||"…").slice(0,600),"agent")}catch{}
+if(agent.pending){const p=agent.pending;agent.pending=null;agRun(p.task,p.img,!1)}}}
+function agLocalRecipe(s){const f=agFront(3.2),X=f[0],Z=f[2],A=[],C=["#ff7aa2","#ffd166","#06d6a0","#4cc9f0","#b388ff"];let say="";
+const has=w=>new RegExp("\\b"+w).test(s);
+if(/\b(clear|reset|remove everything|delete everything|destroy)/.test(s)){A.push({op:"clear"});say="All clear."}
+else if(/\b(night|dark)/.test(s)){A.push({op:"environment",background:"#050818",sun:.3});say="Night falls."}
+else if(/\b(day|bright|sunny)/.test(s)){A.push({op:"environment",background:"#8ec5ff",sun:1.4});say="Daylight!"}
+else if(!/(build|make|create|spawn|add|put)/.test(s))return null;
+else if(has("tower")){for(let i=0;i<9;i++)A.push({op:"spawn",shape:"box",pos:[X,.4+i*.8,Z],size:[1.6-i*.1,.8,1.6-i*.1],color:C[i%5],rot:[0,i*8,0]});say="A tower!"}
+else if(has("pyramid")){for(let l=0;l<5;l++)for(let i=0;i<5-l;i++)for(let j=0;j<5-l;j++)A.push({op:"spawn",shape:"box",pos:[X+(i-(4-l)/2)*.8,.4+l*.8,Z+(j-(4-l)/2)*.8],size:.78,color:C[l%5]});say="A pyramid."}
+else if(has("ring")){for(let i=0;i<14;i++){const a=i/14*6.283;A.push({op:"spawn",shape:"sphere",pos:[X+Math.cos(a)*1.6,1.4,Z+Math.sin(a)*1.6],size:.3,color:C[i%5],emissive:1.5,anim:{bob:.15,bobSpeed:2+i%3}})}say="A ring of lights."}
+else if(has("wall")){for(let i=0;i<7;i++)for(let j=0;j<3;j++)A.push({op:"spawn",shape:"box",pos:[X+(i-3)*1.05,.35+j*.7,Z],size:[1,.68,.4],color:C[(i+j)%5]});say="A wall."}
+else if(has("tree")){A.push({op:"spawn",id:"trunk"+Date.now()%1e4,shape:"cylinder",pos:[X,1,Z],size:[.4,2,.4],color:"#7a4b2a"});for(let k=0;k<3;k++)A.push({op:"spawn",shape:"sphere",pos:[X,2.3+k*.5,Z],size:2-k*.5,color:"#3bb273"});say="A tree."}
+else if(has("stairs")){for(let i=0;i<9;i++)A.push({op:"spawn",shape:"box",pos:[X,.15+i*.3,Z-i*.5],size:[2,.3+i*.3,.5],color:C[i%5]});say="Stairs."}
+else if(has("house")){A.push({op:"spawn",shape:"box",pos:[X,1,Z],size:[3,2,3],color:"#e0c097"},{op:"spawn",shape:"cone",pos:[X,2.7,Z],size:[4.2,1.4,4.2],rot:[0,45,0],color:"#b5473c"},{op:"spawn",shape:"box",pos:[X,.6,Z+1.52],size:[.7,1.2,.05],color:"#5a3b1e"});say="A little house."}
+else if(has("star")){A.push({op:"spawn",shape:"icosahedron",pos:[X,1.6,Z],size:.8,color:"#ffe066",emissive:2,anim:{spin:[20,60,0],bob:.15}});say="A star."}
+else{const sh=has("sphere")?"sphere":"box";A.push({op:"spawn",shape:sh,pos:[X,.6,Z],size:1,color:C[Math.random()*5|0],emissive:.6,anim:{spin:40}});say="Here you go."}
+A.push({op:"say",text:say,emoji:["✨"]});return A}
+async function agLocal(q){const A=agLocalRecipe(String(q||"").toLowerCase());if(!A)return!1;agent.busy=!0;agent.thinking=!0;try{sparkMarkThinking()}catch{}
+try{for(const a of A){try{await agExec(a)}catch(e){console.warn(e)}await agSleep(70)}}finally{agent.busy=!1;agent.thinking=!1;agent.fast=!1;try{sparkDismiss()}catch{}}
+try{addHistoryEntry("🧚 Ember — offline",q,"(local fairy magic — add an API key for the full agent)","local")}catch{}return!0}
+async function agentAsk(q,img){q=String(q||"").trim();if(!q)return!0;agent.userWaiting=!0;agent.lastActive=performance.now();
+if(hasCloudApi()){agRun(q,img,!1);return!0}
+if(agent.busy)return!0;return agLocal(q)}
+function agInitUI(){try{const q=byId("agentQ"),go=()=>{const v=q.value.trim();if(!v)return;q.value="";byId("hud").classList.remove("open");agentAsk(v,null)};
+byId("agentGo").onclick=go;q.addEventListener("keydown",e=>{e.stopPropagation();e.key==="Enter"&&go()});q.addEventListener("keyup",e=>e.stopPropagation());
+const sb=byId("agentStopCycles");sb.onclick=()=>{agent.schedules=[];agSaveSched()};agSchedUI();
+const cb=byId("agentClear");cb.onclick=()=>agResetPress(l=>cb.textContent=l,"🧹 Reset room");const rb=byId("resetRoom");rb&&(rb.onclick=()=>agResetPress(l=>rb.textContent=l,"🧹 Reset room"));
+byId("agentForget").onclick=()=>{agent.memory=[];agent.convo=[];try{localStorage.setItem("museAgentMemory","[]")}catch{}}}catch(e){console.warn("[agent ui]",e)}}
+function updateAgent(dt){const now=performance.now(),t=now/1000;dt=Math.min(.1,dt||.016);
+getWorldPosition(camera,agCam);camera.getWorldDirection(agDir);
+if(!agent.inited){agent.inited=!0;agCaptureDefaults();agLoadSched();agInitUI();agInteractInit();agRestore();agSpaceRestore();const f=agFront(1.4);agent.pos.set(f[0]+.3,1.6,f[2]);agent.goal.copy(agent.pos);agent.lastActive=now}
+/* fairy motion */
+if(agent.thinking&&!agent.fast){agent.goal.set(agCam.x+agDir.x*1.1+Math.cos(t*3)*.35,agCam.y+.05+Math.sin(t*2)*.12,agCam.z+agDir.z*1.1+Math.sin(t*3)*.35)}
+else if(!agent.busy&&now>agent.wanderT){const a=Math.random()*6.283,r=1.3+Math.random()*1.8;let gx=agCam.x+Math.cos(a)*r,gz=agCam.z+Math.sin(a)*r;
+if(!arMode){gx=Math.max(agB().x0+.6,Math.min(agB().x1-.6,gx));gz=Math.max(agB().z0+.6,Math.min(agB().z1-.6,gz))}agent.goal.set(gx,Math.max(.9,Math.min(2.6,agCam.y-.3+Math.random()*1)),gz);agent.wanderT=now+3e3+Math.random()*4e3;
+if(agent.objects.size&&Math.random()<.35){const arr=[...agent.objects.values()],o=arr[Math.random()*arr.length|0];o.getWorldPosition(agTmp);agent.goal.set(agTmp.x,agTmp.y+.8,agTmp.z)}}
+agent.pos.lerp(agent.goal,1-Math.exp(-(agent.fast||agent.thinking?6:1.8)*dt));
+agTmp.copy(agent.pos);agTmp.x+=Math.sin(t*1.3)*.04;agTmp.y+=Math.sin(t*2.1)*.05;agTmp.z+=Math.cos(t*1.7)*.04;
+{const dx=agTmp.x-agCam.x,dz=agTmp.z-agCam.z,dy=agTmp.y-agCam.y,d=Math.hypot(dx,dy,dz);if(d<.5){const k=(.5-d)/(d||1);agTmp.x+=dx*k;agTmp.z+=dz*k;agTmp.y+=dy*k+.1}}
+agentFairy.position.copy(agTmp);agentFairy.rotation.y=Math.atan2(agCam.x-agTmp.x,agCam.z-agTmp.z);
+const sc=agent.scale*(1+.08*Math.sin(t*(agent.thinking?14:5)));agentFairy.scale.setScalar(sc);
+const fl=.35+.55*Math.abs(Math.sin(t*(agent.thinking?55:38)));agWings[0].rotation.y=-fl;agWings[1].rotation.y=fl;
+agCore.material.color.copy(agent.color);agGlow.material.color.copy(agent.color);agLight.color.copy(agent.color);agTrail.material.color.copy(agent.color);
+agLight.intensity=1+.4*Math.sin(t*6)+(agent.thinking?.8:0);agGlow.material.opacity=.7+.2*Math.sin(t*(agent.thinking?16:6));
+agent.trailT-=dt;if(agent.trailT<=0){agent.trailT=.025;agTrailArr.copyWithin(3,0,3*(AG_TRAIL-1));agTrailArr[0]=agTmp.x+(Math.random()-.5)*.03;agTrailArr[1]=agTmp.y+(Math.random()-.5)*.03-.01;agTrailArr[2]=agTmp.z+(Math.random()-.5)*.03;agTrailGeo.attributes.position.needsUpdate=!0}
+if(agent.bubbleUntil){if(now>agent.bubbleUntil){for(const c of[...agBubble.children])agBubble.remove(c);agent.bubbleUntil=0}else{agBubble.position.set(agCam.x+agDir.x*1.3,agCam.y+.15,agCam.z+agDir.z*1.3);agBubble.quaternion.copy(camera.getWorldQuaternion(new Quaternion))}}
+if(agSnapQueue.length){const q=agSnapQueue.shift();let r=null;try{r=agRenderView(q.view)}catch(e){console.warn("[agent snapshot]",e)}q.res(r)}
+/* world objects */
+for(const[id,o]of agent.objects){const u=o.userData,b=u.base;if(!b)continue;
+if(u.dying!==void 0){u.dying+=dt;const k=Math.max(.001,1-u.dying/.25);o.scale.set(b[0]*k,b[1]*k,b[2]*k);if(u.dying>=.25)agFinalRemove(o);continue}
+if(u.tween){const tw=u.tween;tw.t+=dt;const q=Math.min(1,tw.t/tw.dur),e=q*q*(3-2*q);o.position.lerpVectors(tw.p0,tw.p1,e);if(tw.r1)o.rotation.set(tw.r0[0]+(tw.r1[0]-tw.r0[0])*e,tw.r0[1]+(tw.r1[1]-tw.r0[1])*e,tw.r0[2]+(tw.r1[2]-tw.r0[2])*e);if(q>=1){u.y0=o.position.y;u.tween=null;u.vx=u.vy=u.vz=0;agent.dirty=!0}}
+let k=1;if(u.spawnT<1){u.spawnT=Math.min(1,u.spawnT+dt/.4);k=Math.max(.001,easeOutBack(u.spawnT))}
+const A=u.spec.anim;
+if(A){if(A.spin!==void 0){const s=Array.isArray(A.spin)?A.spin:[0,A.spin,0];o.rotation.x+=(+s[0]||0)*AG_D2R*dt;o.rotation.y+=(+s[1]||0)*AG_D2R*dt;o.rotation.z+=(+s[2]||0)*AG_D2R*dt}
+if(A.bob&&!u.spec.physics&&!u.tween)o.position.y=(u.y0||0)+agNum(A.bob,0,0,20)*Math.sin(t*agNum(A.bobSpeed,1.5,.1,20));
+if(A.pulse)k*=1+agNum(A.pulse,0,0,2)*Math.sin(t*agNum(A.pulseSpeed,2,.1,20));
+if(A.sway)o.rotation.z=agNum(A.sway,0,0,90)*AG_D2R*Math.sin(t*1.3);
+if(A.orbit&&A.orbit.radius!==void 0&&!u.tween){const c=agVec(A.orbit.center,[0,0,0],120),r=agNum(A.orbit.radius,1,0,200),a=t*agNum(A.orbit.speed,30,-720,720)*AG_D2R;o.position.x=c[0]+Math.cos(a)*r;o.position.z=c[2]+Math.sin(a)*r;if(A.orbit.center&&A.orbit.center[1]!==void 0&&!A.bob)o.position.y=c[1]}
+if(A.hue){const h=(t*agNum(A.hue,.1,-5,5))%1,col=new THREE.Color().setHSL((h+1)%1,.8,.6);u.light?(u.light.color.copy(col),u.orb.material.color.copy(col)):(o.material.color.copy(col),o.material.emissiveIntensity>0&&o.material.emissive.copy(col))}}
+if(u.spec.physics&&u.spawnT>=1&&!u.tween){const P=agent.phys,pd=dt*P.ts,gs=u.spec.gscale===void 0?1:agNum(u.spec.gscale,1,-20,20);if(pd>0){u.vy-=agent.gravity*gs*pd;u.vx+=P.gx*gs*pd;u.vz+=P.gz*gs*pd;const dr=P.drag+(u.spec.drag===void 0?0:agNum(u.spec.drag,0,0,20));if(dr>0){const dk=Math.max(0,1-dr*pd);u.vx*=dk;u.vy*=dk;u.vz*=dk}
+o.position.x+=u.vx*pd;o.position.y+=u.vy*pd;o.position.z+=u.vz*pd;const rs=u.spec.bounce===void 0?P.bounce:agNum(u.spec.bounce,.55,0,1.1);
+if(P.solid&&!u.parentId){const B=agB(),hx=b[0]*.5,hz=b[2]*.5,hh=b[1]*.5,p=o.position;if(p.x<B.x0+hx){p.x=B.x0+hx;u.vx=Math.abs(u.vx)*rs}else if(p.x>B.x1-hx){p.x=B.x1-hx;u.vx=-Math.abs(u.vx)*rs}
+if(p.z<B.z0+hz){p.z=B.z0+hz;u.vz=Math.abs(u.vz)*rs}else if(p.z>B.z1-hz){p.z=B.z1-hz;u.vz=-Math.abs(u.vz)*rs}
+const top=agent.alt||P.unb?1e9:roomBounds.h;if(p.y>top-hh){p.y=top-hh;u.vy=-Math.abs(u.vy)*rs}}
+const hy=u.parentId||P.nofloor?-1e9:agSupport(o,b);
+if(o.position.y<hy){o.position.y=hy;u.vy=Math.abs(u.vy)>.7?-u.vy*rs:0;const f=Math.max(0,1-P.friction*pd);u.vx*=f;u.vz*=f;u.y0=o.position.y}}}
+if(u.spawnT<1||A&&A.pulse)o.scale.set(b[0]*k,b[1]*k,b[2]*k);else if(!u.spec.physics||1)o.scale.set(b[0],b[1],b[2])}
+agLookTick();for(let i=agent.hooks.length-1;i>=0;i--){try{agent.hooks[i](dt,t)}catch(e){console.warn("[Ember hook removed]",e);agent.hooks.splice(i,1)}}
+/* free will */
+if(!agent.busy&&agent.schedules.length&&hasCloudApi()&&!activeCapture&&now>agent.schedCheck){agent.schedCheck=now+1e3;const t0=Date.now(),sc=agent.schedules.find(x=>x.next<=t0);
+if(sc){sc.next=t0+sc.every*6e4;sc.runs=(sc.runs||0)+1;if(sc.count&&sc.runs>=sc.count)agent.schedules=agent.schedules.filter(x=>x!==sc);agSaveSched();agRun(sc.task,null,!0,sc)}}
+try{agInteract(dt,t)}catch(e){agInteract.w||(agInteract.w=1,console.warn("[interact]",e))}if(agent.dirty&&now>agent.saveAt){agent.dirty=!1;agent.saveAt=now+1500;agSave()}}
+
 ;/* ===== Muse Ember sky projection (Star Wars crawl, links, drag-highlight) ===== */
 const SKY_W=1600,SKY_H=1000,skyCanvas=document.createElement("canvas");skyCanvas.width=SKY_W;skyCanvas.height=SKY_H;
 const skyCtx=skyCanvas.getContext("2d"),skyTex=new CanvasTexture(skyCanvas);skyTex.colorSpace=SRGBColorSpace;skyTex.anisotropy=maxAnisotropy;
@@ -887,7 +1392,7 @@ function skyFaceCamera(){getWorldPosition(camera,skyCamPos),skyGroup.lookAt(skyC
 function skyBeginMove(){camera.getWorldDirection(skyV3b),skyMovePlane.setFromNormalAndCoplanarPoint(skyV3b,skyGroup.position),skyRaycaster.ray.intersectPlane(skyMovePlane,skyMoveHit)?skyGrabOffset.copy(skyGroup.position).sub(skyMoveHit):skyGrabOffset.set(0,0,0)}
 function skyDragMove(){if(!skyRaycaster.ray.intersectPlane(skyMovePlane,skyMoveHit))return;skyGroup.position.copy(skyMoveHit).add(skyGrabOffset),getWorldPosition(camera,skyCamPos),skyMoveHit.copy(skyGroup.position).sub(skyCamPos);const d=skyMoveHit.length();(d<1.2||d>9)&&skyGroup.position.copy(skyCamPos).addScaledVector(skyMoveHit.normalize(),MathUtils.clamp(d,1.2,9)),skyFaceCamera()}
 const skyRaycaster=new Raycaster,skyNdc=new Vector2,skyV3a=new Vector3,skyV3b=new Vector3;
-function isSkyInfoQuery(e){const q=String(e||"").trim().toLowerCase();if(!q)return!1;return /\?$/.test(q)||/^(what|who|whom|whose|why|how|when|where|which|explain|define|describe|tell me|give me|find|search|look up)\b/.test(q)||/\b(connection|relationship|link|difference|meaning|history|cause|effect|impact|role|theory|between)\b/.test(q)}
+function isSkyInfoQuery(e){return!1;const q=String(e||"").trim().toLowerCase();if(!q)return!1;return /\?$/.test(q)||/^(what|who|whom|whose|why|how|when|where|which|explain|define|describe|tell me|give me|find|search|look up)\b/.test(q)||/\b(connection|relationship|link|difference|meaning|history|cause|effect|impact|role|theory|between)\b/.test(q)}
 const SKY_PROMPT=`You are Muse Ember, an assistant who searched for information. Answer the person's information question in a form that will be projected as text into the sky, with an emoji summary shown separately.
 Use web search when the question needs specific, recent or source-backed facts, and base TEXT on what you find. Choose only the relevant information; do not pad.
 Output exactly in this format, nothing else:
@@ -923,7 +1428,7 @@ skyState.tokens.forEach((tok,i)=>{const yy=tok.y-sc;if(yy<30||yy>SKY_H+50)return
 const fadeT=ctx.createLinearGradient(0,0,0,400);fadeT.addColorStop(0,"rgba(3,8,28,.38)");fadeT.addColorStop(.55,"rgba(3,8,28,.14)");fadeT.addColorStop(1,"rgba(3,8,28,0)");ctx.fillStyle=fadeT;ctx.fillRect(0,0,SKY_W,400);const fadeB=ctx.createLinearGradient(0,SKY_H-340,0,SKY_H);fadeB.addColorStop(0,"rgba(3,8,28,0)");fadeB.addColorStop(.55,"rgba(3,8,28,.14)");fadeB.addColorStop(1,"rgba(3,8,28,.38)");ctx.fillStyle=fadeB;ctx.fillRect(0,SKY_H-340,SKY_W,340);
 const maxSc=Math.max(0,skyState.contentH-SKY_H);if(maxSc>0){ctx.fillStyle="rgba(255,232,31,.85)";const th=SKY_H*SKY_H/skyState.contentH;ctx.fillRect(SKY_W-26,20+(SKY_H-40-th)*(sc/maxSc),8,th)}
 skyTex.needsUpdate=!0}
-function showSkyProjection(title,text,sources,query){skyState.title=title||query||"";skyState.query=query||title||"";skyLayout(skyState.title,text,sources);getWorldPosition(camera,skyV3a);camera.getWorldDirection(skyV3b);skyV3b.lengthSq()<.01&&skyV3b.set(0,0,-1);skyGroup.position.copy(skyV3a).addScaledVector(skyV3b,3.6);skyFaceCamera();skyGroup.visible=!0;skyState.pauseUntil=performance.now()+6000;drawSky();setStatus("🌌 Sky text projected where you are looking \u2014 drag to move it, click a cyan link to open it.")}
+function showSkyProjection(title,text,sources,query){return;skyState.title=title||query||"";skyState.query=query||title||"";skyLayout(skyState.title,text,sources);getWorldPosition(camera,skyV3a);camera.getWorldDirection(skyV3b);skyV3b.lengthSq()<.01&&skyV3b.set(0,0,-1);skyGroup.position.copy(skyV3a).addScaledVector(skyV3b,3.6);skyFaceCamera();skyGroup.visible=!0;skyState.pauseUntil=performance.now()+6000;drawSky();setStatus("🌌 Sky text projected where you are looking \u2014 drag to move it, click a cyan link to open it.")}
 function hideSkyProjection(){skyGroup.visible=!1;skyState.selA=skyState.selB=-1;skyState.dragging=!1;skyState.mode=""}
 function skyTokenAt(clientX,clientY){skyNdc.set(clientX/innerWidth*2-1,-(clientY/innerHeight*2-1));skyRaycaster.setFromCamera(skyNdc,camera);const hit=skyRaycaster.intersectObject(skyMesh,!1)[0];return skyTokenFromHit(hit)}
 function skyTokenAtRay(origin,dir){skyRaycaster.set(origin,dir);const hit=skyRaycaster.intersectObject(skyMesh,!1)[0];return skyTokenFromHit(hit)}
@@ -1179,7 +1684,7 @@ statusPanel.visible&&activeCapture&&cancelCapture(activeCapture,"✂️ Cancelle
 },keysDown={};function endDesktopPointer(e){e&&null!==activePtr&&e.pointerId!==activePtr||(activePtr=null,isPointerLocked=!1,desktopTriggerDown=!1,
 canvasEl.style.cursor="")}let desktopTriggerDown=!1;addEventListener("keydown",e=>{e.target&&"INPUT"===e.target.tagName||(keysDown[e.code]=!0,
 "KeyL"!==e.code||e.repeat||renderer.xr.isPresenting||pendingKeyboardEntry||(triggerDownTime.desktop=performance.now()),"Space"===e.code&&(e.preventDefault(),
-!e.repeat&&playerRig.position.y<=.001&&0===jumpVelocity&&(jumpVelocity=3.4)),isWheelOpen&&"ArrowLeft"===e.code&&setWheelPage(wheelPageIndex-1),
+!e.repeat&&agJumpOK(playerRig.position.y,.001)&&(jumpVelocity=agent.phys.jump)),isWheelOpen&&"ArrowLeft"===e.code&&setWheelPage(wheelPageIndex-1),
 isWheelOpen&&"ArrowRight"===e.code&&setWheelPage(wheelPageIndex+1),"KeyQ"===e.code&&setWheelPage(wheelPageIndex-1),
 "KeyE"===e.code&&setWheelPage(wheelPageIndex+1),"KeyV"!==e.code||e.repeat||beginVoiceCapture(),"Escape"===e.code&&cancelCaptureIfActive())}),
 addEventListener("keyup",e=>{
@@ -1358,8 +1863,7 @@ toolbar.getWorldQuaternion(toolbarInvQuat).invert(),controllerRayDir.applyQuater
 const a=(-.95-controllerRayOrigin.z)/controllerRayDir.z;if(a>0){const r=controllerRayOrigin.y+controllerRayDir.y*a
 ;if(Math.abs(controllerRayOrigin.x+controllerRayDir.x*a)<.52&&Math.abs(r-.02)<.36)return panelHitTarget}}return null}function handleButtonPress(e){
 const t=lastPressedTarget[e];if(!t||triggerHeld[e]||(isWheelOpen||isHoldPhase)&&toolbarButtons.indexOf(t)>=0)return!1;triggerHeld[e]=!0,triggerLatched[e]=!0
-;const n=t.userData.btn
-;return"⚙️"===n?togglePanel("cog"):"?"===n?togglePanel("help"):"📷"===n?toggleArVr():"string"==typeof n&&0===n.indexOf("help:")?toggleTipsSection(+n.slice(5)):"panel"===n?togglePanel(openPanel):"editKey"===n?startKeyboardEntry("key"):"clearKey"===n?clearApiKey():"toggleSfx"===n?setSfxEnabled(!sfxEnabled):"mirrorToggle"===n&&setMirrorEnabled(!mirrorOn),
+;const n=t.userData.btn;if("agobj"===n){agPress(t.userData.obj,e);hapticPulse(e,.7,40);return!0}return"⚙️"===n?togglePanel("cog"):"?"===n?togglePanel("help"):"📷"===n?toggleArVr():"string"==typeof n&&0===n.indexOf("help:")?toggleTipsSection(+n.slice(5)):"panel"===n?togglePanel(openPanel):"editKey"===n?startKeyboardEntry("key"):"clearKey"===n?clearApiKey():"resetRoom"===n?agResetPress(l=>settingsButtons[3].userData.setLabel(l),"🧹 Reset room"):"toggleSfx"===n?setSfxEnabled(!sfxEnabled):"mirrorToggle"===n&&setMirrorEnabled(!mirrorOn),
 hapticPulse(e,.7,40),!0}const hiddenTextInput=document.createElement("input");hiddenTextInput.type="text",hiddenTextInput.autocomplete="off",
 hiddenTextInput.spellcheck=!1,hiddenTextInput.setAttribute("aria-label","VR text entry"),Object.assign(hiddenTextInput.style,{position:"fixed",left:"0",top:"0",
 width:"1px",height:"1px",opacity:".01",border:"0",padding:"0",fontSize:"16px",pointerEvents:"none",zIndex:"-1"}),document.body.appendChild(hiddenTextInput)
@@ -1401,7 +1905,7 @@ null===joyId&&(joyId=e.pointerId,joy.setPointerCapture(e.pointerId),joyMove(e),e
 ;window.addEventListener("blur",()=>joyEnd());const tap=(id,fn)=>$(id).addEventListener("click",e=>(e.preventDefault(),fn()));tap("tWheel",()=>{
 pendingKeyboardEntry||statusPanelVisible||(isWheelOpen?closeWheelAndSend():openWheel("desktop"))});tap("tCancel",()=>isWheelOpen&&closeWheelAndReset())
 ;tap("tPrev",()=>isWheelOpen&&setWheelPage(wheelPageIndex-1));tap("tNext",()=>isWheelOpen&&setWheelPage(wheelPageIndex+1))
-;tap("tUndo",()=>isWheelOpen&&removeLastPickedEmoji());tap("tJump",()=>{playerRig.position.y<=.001&&0===jumpVelocity&&(jumpVelocity=3.4)})
+;tap("tUndo",()=>isWheelOpen&&removeLastPickedEmoji());tap("tJump",()=>{agJumpOK(playerRig.position.y,.001)&&(jumpVelocity=agent.phys.jump)})
 ;const holdBtn=(id,start)=>{const b=$(id);let pid=null;b.addEventListener("pointerdown",e=>{
 if(statusPanelVisible&&activeCapture&&activeCapture.tapToFinish)return e.preventDefault(),void endVoiceCapture()
 ;if(null===pid&&!pendingKeyboardEntry&&!statusPanelVisible){e.preventDefault();pid=e.pointerId;try{b.setPointerCapture(pid)}catch{}start()
@@ -1518,7 +2022,7 @@ P.blinkIn-=dt;P.blinkT<0&&P.blinkIn<=0&&(P.blinkT=0,P.blinkIn=2+3*Math.random())
 ;P.blinkT>=.16&&(P.blinkT=-1)}else bl=0}P.blink+=(bl-P.blink)*Math.min(1,40*dt);const b=clamp(P.blink,0,1)
 ;updateFaceRig(P.face,dt,t,P.mouthOpen,b,faceCurrentMood())}}function startMainLoop(){renderer.setAnimationLoop((e,t)=>{t&&(currentXRFrame=t,
 handTrackingFrame=t);const n=Math.min(clock.getDelta(),.05),o=clock.elapsedTime;isHoldPhase?wheelAnimTime-=n:wheelAnimTime+=n;try{updateSpaceBackdrop(n,o)
-}catch{}const a=readGamepadState("left"),r=readGamepadState("right"),s=renderer.xr.isPresenting;if(arMode)try{updateScanPlanes(t),updateScanMeshes(t),
+}catch{}const a=readGamepadState("left"),r=readGamepadState("right"),s=renderer.xr.isPresenting;agent.gp={left:a,right:r};if(arMode)try{updateScanPlanes(t),updateScanMeshes(t),
 updateArShadow(n),t&&updateDepthOcclusion(t)}catch(i){startMainLoop.w||(startMainLoop.w=1,console.warn("[ar room]",i))}
 s||isWheelOpen||(cameraYaw+=1.8*((keysDown.ArrowLeft?1:0)-(keysDown.ArrowRight?1:0))*n),s||(camera.position.set(0,1.6,0),
 camera.rotation.set(cameraPitch,cameraYaw,0,"YXZ")),skyDome.visible&&getWorldPosition(camera,skyDome.position);{
@@ -1530,8 +2034,8 @@ h.lengthSq()<.01&&(camera.getWorldDirection(h),h.y=0),h.normalize();const u=(new
 arMode?roomPlanes.length&&(getWorldPosition(camera,headPos),arCorrectedPos.copy(headPos),clampToRoomPlanes(arCorrectedPos,.25),
 playerRig.position.x+=arCorrectedPos.x-headPos.x,playerRig.position.z+=arCorrectedPos.z-headPos.z):keepPlayerInRoom(.4)}}if(updateLocomotion(n,a,r),
 !s||isWheelOpen||arMode)Si=!0;else{const i=r.stick[0]||0;Math.abs(i)>.65?Si||(Si=!0,snapTurn(-Math.sign(i)*I1*Math.PI/180)):Math.abs(i)<.35&&(Si=!1)}
-if(s&&!arMode){const i=!!r.aOnly||!isWheelOpen&&Hi;i&&!Wc&&playerRig.position.y<=.02&&0===jumpVelocity&&(jumpVelocity=3.4),Wc=i}
-(0!==jumpVelocity||playerRig.position.y>0)&&(jumpVelocity-=9.8*n,playerRig.position.y+=jumpVelocity*n,playerRig.position.y<=0&&(playerRig.position.y=0,
+if(s&&!arMode){const i=!!r.aOnly||!isWheelOpen&&Hi;i&&!Wc&&agJumpOK(playerRig.position.y,.02)&&(jumpVelocity=agent.phys.jump),Wc=i}
+(0!==jumpVelocity||playerRig.position.y>0)&&(jumpVelocity-=agent.phys.pg*n,agent.phys.pg<=0&&(jumpVelocity*=Math.exp(-1.2*n),Math.abs(jumpVelocity)<.005&&(jumpVelocity=0)),playerRig.position.y+=jumpVelocity*n,playerRig.position.y>(agent.phys.unb||agent.alt?300:Math.max(.5,roomBounds.h-1.85))&&(playerRig.position.y=agent.phys.unb||agent.alt?300:Math.max(.5,roomBounds.h-1.85),jumpVelocity=Math.min(0,jumpVelocity)),playerRig.position.y<=0&&(playerRig.position.y=0,
 jumpVelocity=0));try{updateStickMan(n,o,a,r,s)}catch(i){updateStickMan.w||(updateStickMan.w=1,console.warn("[stick man]",i))}const l={left:null,right:null}
 ;toolbar.visible=s;{const i=isWheelOpen||isHoldPhase?0:1;ia+=(i-ia)*Math.min(1,7*n),Math.abs(i-ia)<.02&&(ia=i),
 document.body.classList.toggle("wheel-open",0===i);for(const c of toolbarButtons)c.material.opacity=ia,c.visible=ia>.03}
@@ -1539,7 +2043,7 @@ if(toastPanel.visible&&performance.now()>toastHideAt&&(toastPanel.visible=!1),s)
 const d=controllers[c];!d||isWheelOpen&&c===activeInputSource||statusPanelVisible||pendingKeyboardEntry||isControllerFacingPanel(d)&&(i=!0)}
 mirrorButtonFade=i?1:Math.max(0,mirrorButtonFade-n),mirrorToggleButton.visible=mirrorButtonFade>0&&!isWheelOpen&&!isHoldPhase&&!arMode&&!openPanel,
 mirrorToggleButton.updateMatrixWorld(!0)}for(const i of["left","right"]){const c=controllers[i];if(!c)continue
-;const d="left"===i?a:r,h=controllerButtons[i],u=isWheelOpen&&i===activeInputSource||statusPanelVisible||pendingKeyboardEntry?null:O1(c);l[i]=u,
+;const d="left"===i?a:r,h=controllerButtons[i],u=isWheelOpen&&i===activeInputSource||statusPanelVisible||pendingKeyboardEntry?null:(O1(c)||agent.hov[i]||null);l[i]=u,
 d.trigger||(triggerHeld[i]=!1,triggerLatched[i]=!1),d.trigger&&!h.trigger&&u&&(lastPressedTarget=l,handleButtonPress(i)),
 u&&u!==hoveredButton[i]&&"panel"!==u.userData.btn&&hapticPulse(i,.25,20),hoveredButton[i]=u,
 c.userData.ray&&c.userData.ray.material.color.setHex(u?3465354:16761856)}lastPressedTarget=l
@@ -1633,7 +2137,7 @@ controllerButtons.right.squeeze=r.squeeze;{const i=["⚙️","📷","?"];pointer
 const d=pointerCursors[c],h=controllers[c],u=s?l[c]:null;if(d.visible=!1,h&&u&&i.indexOf(u.userData.btn)>=0){
 const b=getWorldPosition(h,scratchPos).clone(),f=new Vector3(0,0,-1).applyQuaternion(h.getWorldQuaternion(new Quaternion)),w=u.getWorldPosition(new Vector3)
 ;d.position.copy(b).addScaledVector(f,Math.max(.05,w.clone().sub(b).dot(f)-.03)),d.visible=!0,updatePointerCursor(d,!0,o)
-}else d.userData.glow.material.opacity=0}}updateSpark(n,o);try{updateSkyProjection(n)}catch(skyErr){updateSkyProjection.w||(updateSkyProjection.w=1,console.warn('[sky]',skyErr))}try{updatePinchReticles(o)}catch{}{
+}else d.userData.glow.material.opacity=0}}updateSpark(n,o);try{updateAgent(n)}catch(agErr){updateAgent.w||(updateAgent.w=1,console.warn("[agent]",agErr))}try{updateSkyProjection(n)}catch(skyErr){updateSkyProjection.w||(updateSkyProjection.w=1,console.warn('[sky]',skyErr))}try{updatePinchReticles(o)}catch{}{
 const i=pendingRequests>0&&!["orb","orbthink","emerge","orbfade"].includes(spark.mode);if($a.visible=i,i){const c=getWorldPosition(camera,scratchPos);let d=0
 ;for(let h=flyingEmojiMessages.length-1;h>=0;h--){const u=flyingEmojiMessages[h];if(!u.leaving){d=u.yOff+Math.ceil(u.n/4)*emojiGridSpacing;break}}
 $a.position.set(c.x,bodyTopY+.36+d,c.z)}}if(statusPanel.visible){const i=new Vector3;camera.getWorldDirection(i),
