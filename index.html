@@ -102,6 +102,20 @@ body.touch-on #touchUI{display:block}
 </details>
 <details name="hudsec"><summary>🙂 Your avatar</summary>
 <p>You are a <b>stick man</b> sized to <b>your real height</b> in the headset: start sitting and he starts small at that sitting height; stand up and he grows to your standing height at once. He only shrinks again if you squat / stay sat down well below your height for <b>more than 3 seconds</b> — a quick duck or bend keeps your full height. Its mouth is a <b>line</b> that turns into an <b>O</b> while you speak (microphone lip-sync; headsets with WebXR face tracking drive it directly). Arms follow your controllers or hands. Its <b>face shows the emotion of the emoji you send</b> — smiles, frowns, angry brows, tears, blushing, heart eyes, sunglasses and more — stepping through your message in time with the symbols, then relaxing. Sound effects can be switched off and on in settings.</p>
+<p class="note">Ember can change all of this for you — just ask (e.g. <i>“put me in a red wizard outfit with a pointy hat”</i>, <i>“give me flight and super jump”</i>, <i>“take away my powers”</i>) — or set it yourself:</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">
+<label>Outfit <select id="avOutfit" style="width:100%"><option value="none">None (stick man)</option><option value="tee">Tee &amp; trousers</option><option value="hoodie">Hoodie</option><option value="dress">Dress / robe</option><option value="armor">Armour</option><option value="wizard">Wizard robe</option><option value="astronaut">Astronaut suit</option><option value="superhero">Superhero suit</option></select></label>
+<label>Hair <select id="avHair" style="width:100%"><option value="none">None / bald</option><option value="short">Short</option><option value="mohawk">Mohawk</option><option value="ponytail">Ponytail</option><option value="bun">Bun</option><option value="long">Long</option></select></label>
+<label>Accessory <select id="avAccessory" style="width:100%"><option value="none">None</option><option value="hat">Wizard / pointy hat</option><option value="cap">Cap</option><option value="crown">Crown</option><option value="glasses">Glasses</option><option value="halo">Halo</option><option value="horns">Horns</option><option value="wings">Wings</option><option value="cape">Cape</option></select></label>
+<label>Avatar size <input id="avScale" type="range" min="0.7" max="1.4" step="0.05" style="width:100%"></label>
+<label>Outfit colour <input id="avOutfitColor" type="color" style="width:100%"></label>
+<label>Trim / trousers <input id="avAccent" type="color" style="width:100%"></label>
+<label>Skin <input id="avSkin" type="color" style="width:100%"></label>
+<label>Hair colour <input id="avHairColor" type="color" style="width:100%"></label>
+</div>
+<p style="font-size:12px;margin:8px 0 2px"><b>Abilities</b> (Ember can grant/remove these too):</p>
+<div id="avAbilities" style="display:grid;grid-template-columns:1fr 1fr;gap:2px;font-size:12px"></div>
+<p class="note">Fly: hold <b>Space</b> / VR <b>A</b> to rise, <b>C</b> / VR <b>B</b> to sink. Dash: <b>F</b> / VR <b>B</b>. Double jump: press jump again in the air. <button id="avReset" style="padding:6px 10px;border-radius:9px;border:0;background:#eee;cursor:pointer">Reset look &amp; abilities</button></p>
 </details>
 <details name="hudsec"><summary>🎮 Games, portals &amp; grabbing</summary><p>Ask Ember for a game (tic-tac-toe, ring toss, pong…), a portal to a new world, or things to play with. <b>Grab:</b> VR – squeeze the grip near an object, or point at it and pull the trigger to pull it into your hand; release to throw/drop. Desktop/touch – drag it. <b>Tap</b> buttons and portals by pointing and pressing the trigger / clicking. Walk through a portal to travel; the 🏠 button (or the exit portal) brings you home. Ember takes its turns in games automatically after your moves (needs the API key or proxy).</p></details>
 <div id="seq"></div>
@@ -350,7 +364,7 @@ rig.specs.add(ring),rig.specRings.push(ring)}const sb=new Mesh(new BoxGeometry(.
 rig.specs.add(sb),rig.specs.visible=!1,head.add(rig.specs);rig.mask=new Mesh(new SphereGeometry(.104,18,8,3*Math.PI/2-.55,1.1,1.67,.75),dbl(14412276))
 ;rig.mask.visible=!1,head.add(rig.mask);return rig}function updateFaceRig(rig,dt,time,mouthOpen,blink,mood){
 const fc=v=>Math.min(1,Math.max(0,v)),tgt=mood||FACE_NEUTRAL_C,cur=rig.cur,k=1-Math.exp(-14*dt);for(const key of FACE_NUM)cur[key]+=(tgt[key]-cur[key])*k
-;rig.w+=((mood?1:0)-rig.w)*k;rig.hc.lerp(tgt.hc,k);rig.headMat.color.copy(rig.hc)
+;rig.w+=((mood?1:0)-rig.w)*k;rig.hc.lerp(tgt.hc,k);rig.headMat.color.copy(avSkinColor);tgt.tintA&&rig.headMat.color.lerp(tgt.hc,Math.min(1,tgt.tintA*1.4))
 ;const shades=cur.shades>.05,kinds=[tgt.eL,tgt.eR],sc=[cur.es*(1+cur.eyD),cur.es*(1-cur.eyD)];rig.eyes.forEach((E,i)=>{const kind=kinds[i]
 ;E.kind!==kind&&(E.kind=kind,E.pop=1);E.pop*=Math.exp(-9*dt);E.g.scale.setScalar(Math.max(.05,sc[i])*(1+.35*E.pop))
 ;for(const n of["dot","arc","flat","x","heart","star"])E[n].visible=!shades&&kind===n;E.dot.scale.set(1+.6*blink,Math.max(.06,cur.ey)*(1-.88*blink),1)
@@ -371,6 +385,38 @@ const on2=cur.tears>(T.row?1.2:.08),ph=(time*(.9+.2*T.row)+.31*T.k)%1,x=T.side*(
 rig.halo.visible=cur.halo>.05;rig.halo.scale.setScalar(Math.max(.01,fc(cur.halo)));rig.halo.position.set(0,.15+.006*Math.sin(3*time),0)
 ;rig.shades.visible=shades;rig.shades.scale.setScalar(Math.max(.01,fc(cur.shades)));rig.specs.visible=tgt.specs>0
 ;rig.specRings[0].visible=rig.specBridge.visible=1===tgt.specs;rig.mask.visible=cur.mask>.05;rig.mask.scale.setScalar(Math.max(.01,fc(cur.mask)))}
+const AV_OUTFITS=["none","tee","hoodie","dress","armor","wizard","astronaut","superhero"],AV_HAIRS=["none","short","mohawk","ponytail","bun","long"],AV_ACCESSORIES=["none","hat","cap","crown","glasses","halo","horns","wings","cape"],AV_ABILITY_DEFS=[["fly","🪽 Fly"],["superJump","🦘 Super jump"],["superSpeed","⚡ Super speed"],["doubleJump","✌️ Double jump"],["dash","💨 Dash (F / VR B)"],["slowFall","🪂 Slow fall"],["shield","🛡️ Shield bubble"],["glow","✨ Glow"],["nightVision","🔦 Night vision"]];
+const AV_DEFAULT_LOOK={skin:"#f4f4f0",hairColor:"#3a2a1c",hair:"none",outfit:"none",outfitColor:"#3b82f6",accentColor:"#f59e0b",accessory:"none",accessoryColor:"#f59e0b",shoesColor:"#222222",scale:1};
+let avatarLook={...AV_DEFAULT_LOOK},playerAbilities={};AV_ABILITY_DEFS.forEach(([k])=>playerAbilities[k]=!1);
+try{Object.assign(avatarLook,JSON.parse(localStorage.getItem("museAvatarLook")||"{}"));Object.assign(playerAbilities,JSON.parse(localStorage.getItem("museAbilities")||"{}"))}catch{}
+const avSkinColor=new Color(avatarSkin);let jumpsUsed=0,dashVel=new Vector3,dashCdUntil=0;
+function avNormColor(v,d){try{return "#"+new Color(v).getHexString()}catch{return d}}
+function avSaveLook(){try{localStorage.setItem("museAvatarLook",JSON.stringify(avatarLook));localStorage.setItem("museAbilities",JSON.stringify(playerAbilities))}catch(e){try{showError("Avatar settings could not be saved: "+e.message)}catch{}}try{typeof agent!=="undefined"&&(agent.dirty=!0)}catch{}}
+function abilitySpeedMul(){return playerAbilities.superSpeed?2.4:1}
+function effJump(){return agent.phys.jump*(playerAbilities.superJump?2.2:1)}
+function tryPlayerJump(){if(playerAbilities.fly)return!1;if(playerRig.position.y<=.02&&0===jumpVelocity){jumpVelocity=effJump();jumpsUsed=1;return!0}if(playerAbilities.doubleJump&&jumpsUsed<2&&playerRig.position.y>.02){jumpVelocity=effJump()*.92;jumpsUsed=2;try{sparkFairyEffects.burst(playerAvatar.position.clone().add(new Vector3(0,.3,0)),.5)}catch{}return!0}return!1}
+function tryDash(){const now=performance.now();if(!playerAbilities.dash||now<dashCdUntil)return!1;dashCdUntil=now+900;const d=new Vector3;camera.getWorldDirection(d);d.y=0;d.lengthSq()<.04&&d.set(0,0,-1);d.normalize();dashVel.copy(d.multiplyScalar(10));try{sparkFairyEffects.burst(playerAvatar.position.clone().add(new Vector3(0,1,0)),.7)}catch{}return!0}
+function applyAvatarLook(){avatarLook.skin=avNormColor(avatarLook.skin,AV_DEFAULT_LOOK.skin);avatarLook.hairColor=avNormColor(avatarLook.hairColor,AV_DEFAULT_LOOK.hairColor);avatarLook.outfitColor=avNormColor(avatarLook.outfitColor,AV_DEFAULT_LOOK.outfitColor);avatarLook.accentColor=avNormColor(avatarLook.accentColor,AV_DEFAULT_LOOK.accentColor);avatarLook.accessoryColor=avNormColor(avatarLook.accessoryColor,avatarLook.accentColor);avatarLook.shoesColor=avNormColor(avatarLook.shoesColor,AV_DEFAULT_LOOK.shoesColor);
+AV_OUTFITS.includes(avatarLook.outfit)||(avatarLook.outfit="none");AV_HAIRS.includes(avatarLook.hair)||(avatarLook.hair="none");AV_ACCESSORIES.includes(avatarLook.accessory)||(avatarLook.accessory="none");avatarLook.scale=Math.min(1.4,Math.max(.7,Number(avatarLook.scale)||1));avSkinColor.set(avatarLook.skin);
+const P=playerAvatarParts,O=P.outfit;if(!O)return;P.headMat.color.set(avatarLook.skin);P.handMat.color.set(avatarLook.skin);playerAvatar.scale.setScalar(avatarLook.scale);
+O.matOutfit.color.set(avatarLook.outfitColor);O.matAccent.color.set(avatarLook.accentColor);O.matHair.color.set(avatarLook.hairColor);O.matShoe.color.set(avatarLook.shoesColor);O.matAccessory.color.set(avatarLook.accessoryColor);
+O.matOutfit.metalness=avatarLook.outfit==="armor"?.75:avatarLook.outfit==="astronaut"?.25:.05;O.matOutfit.roughness=avatarLook.outfit==="armor"?.35:.75;O.matOutfit.emissive.set(avatarLook.outfitColor);O.matOutfit.emissiveIntensity=playerAbilities.glow?.55:0;
+const dressed=avatarLook.outfit!=="none",robe=avatarLook.outfit==="dress"||avatarLook.outfit==="wizard";
+O.shirt.visible=dressed;O.sleeveL.visible=O.sleeveR.visible=dressed;O.pantsL.visible=O.pantsR.visible=O.pantsLoL.visible=O.pantsLoR.visible=dressed&&!robe;O.skirt.visible=robe;O.shoeL.visible=O.shoeR.visible=dressed;
+O.hairCap.visible=avatarLook.hair==="short"||avatarLook.hair==="long";O.mohawk.visible=avatarLook.hair==="mohawk";O.bun.visible=avatarLook.hair==="bun";O.ponytail.visible=avatarLook.hair==="ponytail";O.longHair.visible=avatarLook.hair==="long";
+O.hat.visible=avatarLook.accessory==="hat"||avatarLook.outfit==="wizard"&&avatarLook.accessory==="none";O.cap.visible=avatarLook.accessory==="cap";O.cap.userData.brim&&(O.cap.userData.brim.visible=O.cap.visible);O.glasses.userData.other&&(O.glasses.userData.other.visible=avatarLook.accessory==="glasses");O.crown.visible=avatarLook.accessory==="crown";O.glasses.visible=avatarLook.accessory==="glasses";O.haloA.visible=avatarLook.accessory==="halo";O.hornL.visible=O.hornR.visible=avatarLook.accessory==="horns";
+O.cape.visible=avatarLook.accessory==="cape"||avatarLook.outfit==="superhero";O.wingL.visible=O.wingR.visible=avatarLook.accessory==="wings";
+O.shield.visible=!!playerAbilities.shield;O.glowLight.intensity=playerAbilities.nightVision?2.2:playerAbilities.glow?1.2:0;O.glowLight.color.set(avatarLook.accentColor);
+if(typeof syncAvatarUI==="function")try{syncAvatarUI()}catch{}avSaveLook()}
+function updateOutfit(P,T,pel,shL,shR,armL,armR,legL,legR,w){const O=P.outfit;if(!O)return;const back=new Vector3(0,0,1).applyQuaternion(w),mid=T.clone().lerp(pel,.5);
+if(O.shirt.visible)stretchCylinderBetween(O.shirt,T,pel);if(O.sleeveL.visible){stretchCylinderBetween(O.sleeveL,shL,armL.el);stretchCylinderBetween(O.sleeveR,shR,armR.el)}
+if(O.pantsL.visible){stretchCylinderBetween(O.pantsL,pel,legL.el);stretchCylinderBetween(O.pantsLoL,legL.el,legL.ha);stretchCylinderBetween(O.pantsR,pel,legR.el);stretchCylinderBetween(O.pantsLoR,legR.el,legR.ha)}
+if(O.skirt.visible){O.skirt.position.copy(mid).add(new Vector3(0,-.08,0));O.skirt.scale.set(1,Math.max(.25,T.y-pel.y+.35),1);O.skirt.quaternion.copy(w)}
+const toe=new Vector3(0,0,-.07).applyQuaternion(w);if(O.shoeL.visible){O.shoeL.position.copy(legL.ha).add(toe);O.shoeL.quaternion.copy(w);O.shoeR.position.copy(legR.ha).add(toe);O.shoeR.quaternion.copy(w)}
+if(O.cape.visible){O.cape.position.copy(mid).addScaledVector(back,.1);O.cape.position.y-=.05;O.cape.quaternion.copy(w)}
+if(O.wingL.visible){const flap=.35+.25*Math.sin(performance.now()/180);O.wingL.position.copy(mid).addScaledVector(back,.09);O.wingR.position.copy(mid).addScaledVector(back,.09);O.wingL.rotation.set(0,avatarYaw-.6-flap*.3,0);O.wingR.rotation.set(0,avatarYaw+.6+flap*.3,0)}
+if(O.shield.visible){O.shield.position.set(0,Math.max(.7,T.y-.1),0);O.shield.scale.set(1,Math.max(.8,T.y+.35),1);O.shield.material.opacity=.14+.05*Math.sin(performance.now()/300)}
+O.glowLight.position.copy(T)}
 function buildStickMan(){const g=new Group,lineMat=new MeshStandardMaterial({color:1710618,roughness:.6}),headMat=new MeshStandardMaterial({
 color:new Color(avatarSkin),roughness:.7}),handMat=new MeshStandardMaterial({color:new Color(avatarSkin),roughness:.6}),faceMat=new MeshBasicMaterial({
 color:1118481}),limb=()=>{const m=new Mesh(new CylinderGeometry(.014,.014,1,10),lineMat);return m.castShadow=!0,g.add(m),m},ball=(r,mat)=>{
@@ -380,8 +426,22 @@ const m=new Mesh(new SphereGeometry(r,14,10),mat||lineMat);return m.castShadow=!
 ;const headShadow=new Mesh(new SphereGeometry(.1,16,12),new MeshBasicMaterial({colorWrite:!1,depthWrite:!1}));headShadow.castShadow=!0,g.add(headShadow)
 ;g.userData.parts={head:head,headShadow:headShadow,face:faceRig,eyeL:eyes[0],eyeR:eyes[1],blink:0,blinkIn:2+3*Math.random(),blinkT:-1,shoulder:ball(.016),
 neck:limb(),torso:limb(),armUpL:limb(),armLoL:limb(),armUpR:limb(),armLoR:limb(),legUpL:limb(),legLoL:limb(),legUpR:limb(),legLoR:limb(),footL:limb(),
-footR:limb(),handL:ball(.024,handMat),handR:ball(.024,handMat),pelvis:ball(.02),headMat:headMat,handMat:handMat,mouthOpen:0};return g}
-const playerAvatar=buildStickMan();scene.add(playerAvatar);const playerAvatarParts=playerAvatar.userData.parts,setHeadVisible=e=>{
+footR:limb(),handL:ball(.024,handMat),handR:ball(.024,handMat),pelvis:ball(.02),headMat:headMat,handMat:handMat,mouthOpen:0};
+const matOutfit=new MeshStandardMaterial({color:avatarLook.outfitColor,roughness:.75}),matAccent=new MeshStandardMaterial({color:avatarLook.accentColor,roughness:.8}),matHair=new MeshStandardMaterial({color:avatarLook.hairColor,roughness:.9}),matShoe=new MeshStandardMaterial({color:avatarLook.shoesColor,roughness:.7}),matAccessory=new MeshStandardMaterial({color:avatarLook.accessoryColor,roughness:.5,metalness:.3});
+const om=(geo,mat)=>{const m=new Mesh(geo,mat);m.castShadow=!0;m.visible=!1;g.add(m);return m},hm=(geo,mat)=>{const m=new Mesh(geo,mat);m.visible=!1;head.add(m);return m};
+const outfit={matOutfit:matOutfit,matAccent:matAccent,matHair:matHair,matShoe:matShoe,matAccessory:matAccessory,
+shirt:om(new CylinderGeometry(.105,.09,1,14),matOutfit),sleeveL:om(new CylinderGeometry(.038,.034,1,10),matOutfit),sleeveR:om(new CylinderGeometry(.038,.034,1,10),matOutfit),
+pantsL:om(new CylinderGeometry(.042,.038,1,10),matAccent),pantsLoL:om(new CylinderGeometry(.038,.034,1,10),matAccent),pantsR:om(new CylinderGeometry(.042,.038,1,10),matAccent),pantsLoR:om(new CylinderGeometry(.038,.034,1,10),matAccent),
+skirt:om(new CylinderGeometry(.1,.2,1,14,1,!0),matOutfit),shoeL:om(new THREE.BoxGeometry(.07,.045,.14),matShoe),shoeR:om(new THREE.BoxGeometry(.07,.045,.14),matShoe),
+cape:om(new PlaneGeometry(.36,.55),new MeshStandardMaterial({color:avatarLook.accentColor,roughness:.85,side:DoubleSide})),wingL:om(new PlaneGeometry(.3,.18),new MeshStandardMaterial({color:avatarLook.accentColor,roughness:.6,side:DoubleSide,transparent:!0,opacity:.85})),wingR:om(new PlaneGeometry(.3,.18),new MeshStandardMaterial({color:avatarLook.accentColor,roughness:.6,side:DoubleSide,transparent:!0,opacity:.85})),
+shield:om(new SphereGeometry(.55,20,14),new MeshBasicMaterial({color:avatarLook.accentColor,transparent:!0,opacity:.16,side:DoubleSide,depthWrite:!1})),glowLight:new THREE.PointLight(16777215,0,7,1.6),
+hairCap:hm(new SphereGeometry(.104,20,12,0,Math.PI*2,0,1.85),matHair),mohawk:hm(new THREE.BoxGeometry(.025,.075,.17),matHair),bun:hm(new SphereGeometry(.045,12,10),matHair),ponytail:hm(new CylinderGeometry(.018,.03,.22,10),matHair),longHair:hm(new THREE.BoxGeometry(.17,.24,.045),matHair),
+hat:hm(new THREE.ConeGeometry(.085,.16,16),matAccessory),cap:hm(new SphereGeometry(.105,18,10,0,Math.PI*2,0,1.35),matAccessory),crown:hm(new CylinderGeometry(.072,.082,.06,8,1,!0),matAccessory),glasses:hm(new TorusGeometry(.028,.004,6,20),matAccessory),haloA:hm(new TorusGeometry(.06,.006,8,28),new MeshBasicMaterial({color:16765514})),hornL:hm(new THREE.ConeGeometry(.018,.07,10),matAccessory),hornR:hm(new THREE.ConeGeometry(.018,.07,10),matAccessory)};
+outfit.mohawk.position.set(0,.1,-.01);outfit.bun.position.set(0,.1,.075);outfit.ponytail.position.set(0,.01,.115);outfit.ponytail.rotation.x=.45;outfit.longHair.position.set(0,-.03,.088);outfit.hairCap.position.y=.012;
+outfit.hat.position.y=.15;outfit.cap.position.y=.018;const capBrim=new Mesh(new THREE.BoxGeometry(.09,.012,.07),matAccessory);capBrim.position.set(0,.045,-.1);outfit.cap.parent.add(capBrim);capBrim.visible=!1;outfit.cap.userData.brim=capBrim;
+outfit.crown.position.y=.115;outfit.glasses.position.set(-.036,.026,-.098);const glassesR=outfit.glasses.clone();glassesR.position.x=.036;head.add(glassesR);glassesR.visible=!1;outfit.glasses.userData.other=glassesR;
+outfit.haloA.position.y=.15;outfit.haloA.rotation.x=Math.PI/2;outfit.hornL.position.set(-.075,.085,0);outfit.hornL.rotation.z=.5;outfit.hornR.position.set(.075,.085,0);outfit.hornR.rotation.z=-.5;g.add(outfit.glowLight);g.userData.parts.outfit=outfit;return g}
+const playerAvatar=buildStickMan();scene.add(playerAvatar);const playerAvatarParts=playerAvatar.userData.parts;applyAvatarLook();const setHeadVisible=e=>{
 playerAvatarParts.head.visible=e};setHeadVisible(!1);const ballAnchor=new Object3D;playerAvatar.add(ballAnchor)
 ;const leftController=renderer.xr.getController(0),rightController=renderer.xr.getController(1);playerRig.add(leftController,rightController)
 ;const controllers={left:leftController,right:rightController};{const e=[leftController,rightController];e.forEach(t=>t.addEventListener("connected",n=>{
@@ -411,7 +471,7 @@ cameraForward.normalize(),cameraRight.crossVectors(cameraForward,unitYAxis);let 
 }else u>.1&&f<-.45&&Math.abs(f)>1.2*M&&S<.35?a=Math.max(a,Math.min(2.4,.7+1.1*-f)):u>.1&&f>.6&&Math.abs(f)>1.2*M&&S>.5&&(a=Math.min(a,-Math.min(1.8,.5+.8*f)))}
 2===s&&playerRig.position.y<=.02&&0===jumpVelocity?Hi=!0:(0!==a?moveVelocity.lerp(cameraForward.clone().multiplyScalar(a),Math.min(1,9*e)):moveVelocity.multiplyScalar(Math.exp(-3.5*e)),
 verticalVelocity=0!==r?verticalVelocity+(r-verticalVelocity)*Math.min(1,12*e):verticalVelocity*Math.exp(-6*e),
-!o&&moveVelocity.lengthSq()>4e-4&&(playerRig.position.addScaledVector(moveVelocity,e*agent.phys.speed),arMode?roomPlanes.length&&(getWorldPosition(camera,headPos),
+!o&&moveVelocity.lengthSq()>4e-4&&(playerRig.position.addScaledVector(moveVelocity,e*agent.phys.speed*abilitySpeedMul()),arMode?roomPlanes.length&&(getWorldPosition(camera,headPos),
 arCorrectedPos.copy(headPos),clampToRoomPlanes(arCorrectedPos,.25),playerRig.position.x+=arCorrectedPos.x-headPos.x,
 playerRig.position.z+=arCorrectedPos.z-headPos.z):keepPlayerInRoom(.4)),!o&&Math.abs(verticalVelocity)>.01&&snapTurn(verticalVelocity*e))}
 function readHandJoints(e){try{const t=handTrackingFrame,n=renderer.xr.getReferenceSpace();if(!t||!n||!e.hand)return null;const o=w=>{
@@ -1011,7 +1071,27 @@ if(a.limit!==void 0)agEnv({boundaryLimit:!!a.limit&&a.limit!=="off"});
 if(a.solidWalls!==void 0)agEnv({solidWalls:a.solidWalls});
 agSpaceSave();agent.dirty=!0;
 return"ok \u2192 "+agSpaceDesc()+"; boundaryLimit "+!agent.phys.unb+"; "+out.join(" ")}
-function agPlayerOp(a){const k={};for(const[x,y]of[["gravity","playerGravity"],["playerGravity","playerGravity"],["jump","jump"],["speed","speed"]])if(a[x]!==void 0)k[y]=a[x];agEnv(k);
+const AV_ABILITY_ALIASES={flight:"fly",fly:"fly",flying:"fly",superjump:"superJump","super-jump":"superJump",super_jump:"superJump",superspeed:"superSpeed","super-speed":"superSpeed",fast:"superSpeed",speed:"superSpeed",doublejump:"doubleJump","double-jump":"doubleJump",dash:"dash",slowfall:"slowFall","slow-fall":"slowFall",featherfall:"slowFall",shield:"shield",bubble:"shield",glow:"glow",glowing:"glow",nightvision:"nightVision","night-vision":"nightVision",headlamp:"nightVision"};
+function avAbilityKey(k){return AV_ABILITY_ALIASES[String(k||"").toLowerCase().replace(/\s+/g,"")]||null}
+function agAbilityOp(a){a=a||{};let list=[];
+if(a.clear||a.none)list=Object.keys(playerAbilities);
+if(Array.isArray(a.give))for(const k of a.give){const key=avAbilityKey(k);key&&(playerAbilities[key]=!0)}
+if(Array.isArray(a.remove))for(const k of a.remove){const key=avAbilityKey(k);key&&(playerAbilities[key]=!1)}
+if(a.set&&typeof a.set==="object")for(const[k,v]of Object.entries(a.set)){const key=avAbilityKey(k);key&&(playerAbilities[key]=!!v)}
+for(const k of Object.keys(playerAbilities))if(a[k]!==void 0)playerAbilities[k]=!!a[k];
+if(list.length)for(const k of list)playerAbilities[k]=!1;
+applyAvatarLook();return "abilities "+JSON.stringify(playerAbilities)+" (fly: hold jump to rise; superJump x2.2, superSpeed x2.4, doubleJump, dash, slowFall cap -1.3m/s, shield/glow/nightVision visual)"}
+function agAvatarOp(a){a=a||{};
+if(a.reset){avatarLook={...AV_DEFAULT_LOOK}}else{
+if(a.skin!==void 0)avatarLook.skin=String(a.skin);if(a.skinColor!==void 0)avatarLook.skin=String(a.skinColor);
+if(a.hair!==void 0)avatarLook.hair=String(a.hair).toLowerCase();if(a.hairColor!==void 0)avatarLook.hairColor=String(a.hairColor);
+if(a.outfit!==void 0)avatarLook.outfit=String(a.outfit).toLowerCase();if(a.clothes!==void 0)avatarLook.outfit=String(a.clothes).toLowerCase();if(a.outfitColor!==void 0)avatarLook.outfitColor=String(a.outfitColor);if(a.color!==void 0)avatarLook.outfitColor=String(a.color);
+if(a.accent!==void 0)avatarLook.accentColor=String(a.accent);if(a.accentColor!==void 0)avatarLook.accentColor=String(a.accentColor);
+if(a.accessory!==void 0)avatarLook.accessory=String(a.accessory).toLowerCase();if(a.accessoryColor!==void 0)avatarLook.accessoryColor=String(a.accessoryColor);
+if(a.shoes!==void 0)avatarLook.shoesColor=String(a.shoes);if(a.shoesColor!==void 0)avatarLook.shoesColor=String(a.shoesColor);
+if(a.scale!==void 0)avatarLook.scale=agNum(a.scale,1,.7,1.4);if(a.size!==void 0)avatarLook.scale=agNum(a.size,1,.7,1.4)}
+applyAvatarLook();return "avatar "+JSON.stringify(avatarLook)}
+function agPlayerOp(a){if(a.avatar)return agAvatarOp(a.avatar);if(a.abilities)return agAbilityOp(a.abilities);if(a.outfit!==void 0||a.skin!==void 0||a.hair!==void 0||a.accessory!==void 0)agAvatarOp(a);const k={};for(const[x,y]of[["gravity","playerGravity"],["playerGravity","playerGravity"],["jump","jump"],["speed","speed"]])if(a[x]!==void 0)k[y]=a[x];agEnv(k);
 if(a.lift!==void 0){playerRig.position.y=agNum(a.lift,0,0,500);try{jumpVelocity=0}catch{}}
 if(a.fly===!0){agEnv({playerGravity:0})}else if(a.fly===!1){agEnv({playerGravity:9.8})}
 agent.playerMoved=!0;return"player "+JSON.stringify(agPhysInfo().player)+" lift "+playerRig.position.y.toFixed(2)}
@@ -1024,8 +1104,8 @@ em.forEach((e,i)=>{try{const q=createEmojiQuad(e,.13,256);q.position.x=(i-(em.le
 agent.bubbleUntil=em.length?performance.now()+7e3:0;agent.lastSay=text||agent.lastSay}
 function agRemember(note){note=String(note||"").slice(0,300);if(!note)return;agent.memory.push(note);agent.memory=agent.memory.slice(-25);try{localStorage.setItem("museAgentMemory",JSON.stringify(agent.memory))}catch{}}
 function agSave(){try{const list=[];for(const[id,o]of agent.objects){const u=o.userData,sp={...u.spec};sp.pos=[+o.position.x.toFixed(2),+((u.spec.anim&&u.spec.anim.bob&&!u.spec.physics&&u.y0!=null)?u.y0:o.position.y).toFixed(2),+o.position.z.toFixed(2)];sp.rot=[+(o.rotation.x/AG_D2R).toFixed(1),+(o.rotation.y/AG_D2R).toFixed(1),+(o.rotation.z/AG_D2R).toFixed(1)];list.push({id,shape:u.shape,parent:u.parentId,world:u.world,...sp})}
-const s=JSON.stringify({objs:list,env:agent.world==="home"?agent.env:agent.worlds.home.env,counter:agent.counter,state:agent.state,worlds:Object.fromEntries(Object.entries(agent.worlds).filter(([k])=>k!=="home").map(([k,w])=>[k,{env:k===agent.world?agent.env:w.env,bounds:w.bounds,spawn:w.spawn}]))});s.length<4e5&&localStorage.setItem("museAgentWorld",s)}catch{}}
-function agRestore(){try{const w=JSON.parse(localStorage.getItem("museAgentWorld")||"null");if(!w)return;agent.counter=w.counter||0;agent.state=w.state||{};for(const k in w.worlds||{}){const x=w.worlds[k],ww=agWorldOf(k);Object.assign(ww.env,x.env||{});x.bounds&&(ww.bounds=x.bounds);x.spawn&&(ww.spawn=x.spawn)}for(const s of w.objs||[])try{agSpawn({...s,_silent:!0})}catch{}w.env&&Object.keys(w.env).length&&agEnv(w.env)}catch{}}
+const s=JSON.stringify({objs:list,avatar:avatarLook,abilities:playerAbilities,env:agent.world==="home"?agent.env:agent.worlds.home.env,counter:agent.counter,state:agent.state,worlds:Object.fromEntries(Object.entries(agent.worlds).filter(([k])=>k!=="home").map(([k,w])=>[k,{env:k===agent.world?agent.env:w.env,bounds:w.bounds,spawn:w.spawn}]))});s.length<4e5&&localStorage.setItem("museAgentWorld",s)}catch{}}
+function agRestore(){try{const w=JSON.parse(localStorage.getItem("museAgentWorld")||"null");if(!w)return;agent.counter=w.counter||0;agent.state=w.state||{};if(w.avatar)avatarLook={...AV_DEFAULT_LOOK,...w.avatar};if(w.abilities)Object.assign(playerAbilities,w.abilities);applyAvatarLook();for(const k in w.worlds||{}){const x=w.worlds[k],ww=agWorldOf(k);Object.assign(ww.env,x.env||{});x.bounds&&(ww.bounds=x.bounds);x.spawn&&(ww.spawn=x.spawn)}for(const s of w.objs||[])try{agSpawn({...s,_silent:!0})}catch{}w.env&&Object.keys(w.env).length&&agEnv(w.env)}catch{}}
 
 const agR2=n=>+Number(n).toFixed(2);
 function agSettle(o){if(o===agentWorld)for(const w of Object.values(agent.worlds))w.group!==o&&agSettle(w.group);o.traverse(c=>{const u=c.userData;if(u&&u.agentId&&u.base&&u.spawnT<1&&u.dying===void 0){u.spawnT=1;c.scale.set(u.base[0],u.base[1],u.base[2])}})}
@@ -1097,7 +1177,7 @@ function agEnvDefaults(){const d=agent.def;if(!d)return;try{if(d.bg&&!arMode)sce
 function agCaptureDefaults(){const d={bg:scene.background&&scene.background.isColor?scene.background.clone():null,fog:scene.fog?{c:scene.fog.color.clone(),n:scene.fog.near,f:scene.fog.far}:null,sun:null,sunC:null,amb:null,sky:null,exp:renderer.toneMappingExposure};
 try{d.sun=sunLight.intensity;d.sunC=sunLight.color.clone()}catch{}try{d.amb=bounce.intensity}catch{}try{d.sky=skyDome.material.color.clone()}catch{}
 agent.def=d;agent.rig0={x:playerRig.position.x,z:playerRig.position.z}}
-function agResetRoom(o){o=o||{};if(agent.busy&&!o.fromOp)agent.cancel=!0;agent.pending=null;agClear();agent.hooks.length=0;agent.env={};agWorldsReset();agEnvDefaults();agent.color.set(16771466);agent.scale=1;agent.gravity=9.8;agPhysDefaults();agSpaceReset();try{playerRig.position.y=0;jumpVelocity=0}catch{}agent.counter=0;
+function agResetRoom(o){o=o||{};if(agent.busy&&!o.fromOp)agent.cancel=!0;agent.pending=null;agClear();agent.hooks.length=0;agent.env={};agWorldsReset();agEnvDefaults();agent.color.set(16771466);agent.scale=1;agent.gravity=9.8;agPhysDefaults();agSpaceReset();avatarLook={...AV_DEFAULT_LOOK};for(const k in playerAbilities)playerAbilities[k]=!1;applyAvatarLook();try{playerRig.position.y=0;jumpVelocity=0}catch{}agent.counter=0;
 if(!o.fromOp)agent.convo=[];
 if(agent.playerMoved&&agent.rig0){playerRig.position.x=agent.rig0.x;playerRig.position.z=agent.rig0.z;agent.playerMoved=!1}
 for(const c of[...agBubble.children])agBubble.remove(c);agent.bubbleUntil=0;
@@ -1139,10 +1219,10 @@ case"say":agSay(a.text,a.emoji);return"ok";
 case"remember":agRemember(a.note);return"ok";
 case"forget":a.all?(agent.memory=[],localStorage.setItem("museAgentMemory","[]")):0;return"ok";
 case"wait":await agSleep(agNum(a.ms,300,0,3e3));return"ok";
-case"run_js":{const ctx={THREE,scene,camera,renderer,playerRig,agent,fairy:agentFairy,world:agentWorld,spawn:agSpawn,modify:agModify,remove:id=>agRemove(id,!1),sleep:agSleep,front:agFront,say:agSay,env:agEnv,on:agOn,tell:agTell,hands:agHands,get:id=>agent.objects.get(String(id)),goto:agGoto,state:agent.state,space:agSpaceOp,RS:window.RS,roomBounds};
-const fn=new Function("ctx","const {THREE,scene,camera,renderer,playerRig,agent,fairy,world,spawn,modify,remove,sleep,front,say,env,on,tell,hands,get,goto,state,space,RS,roomBounds}=ctx;return (async()=>{"+String(a.code||"")+"\n})()");
+case"run_js":{const ctx={THREE,scene,camera,renderer,playerRig,agent,fairy:agentFairy,world:agentWorld,spawn:agSpawn,modify:agModify,remove:id=>agRemove(id,!1),sleep:agSleep,front:agFront,say:agSay,env:agEnv,on:agOn,tell:agTell,hands:agHands,get:id=>agent.objects.get(String(id)),goto:agGoto,state:agent.state,space:agSpaceOp,RS:window.RS,roomBounds,avatar:agAvatarOp,abilities:agAbilityOp,getAvatar:()=>({...avatarLook}),getAbilities:()=>({...playerAbilities})};
+const fn=new Function("ctx","const {THREE,scene,camera,renderer,playerRig,agent,fairy,world,spawn,modify,remove,sleep,front,say,env,on,tell,hands,get,goto,state,space,RS,roomBounds,avatar,abilities,getAvatar,getAbilities}=ctx;return (async()=>{"+String(a.code||"")+"\n})()");
 const r=await fn(ctx);agent.dirty=!0;let s;try{s=typeof r==="string"?r:JSON.stringify(r)}catch{s=String(r)}return"ok"+(s&&s!=="undefined"?" → "+s.slice(0,400):"")}
-case"space":case"room":return agSpaceOp(a);case"physics":agEnv(a);return"ok \u2192 "+JSON.stringify(agPhysInfo());case"player":return agPlayerOp(a);
+case"space":case"room":return agSpaceOp(a);case"physics":agEnv(a);return"ok \u2192 "+JSON.stringify(agPhysInfo());case"player":return agPlayerOp(a);case"avatar":case"outfit":case"clothes":case"look":return agAvatarOp(a);case"ability":case"abilities":case"power":case"powers":case"grant":return agAbilityOp(a);
 default:throw new Error("unknown op '"+op+"'")}}
 /* ===== Ember: interactivity, worlds, portals, games ===== */
 agent.worlds={home:{group:agentWorld,env:agent.env,bounds:null,spawn:[0,-1.9]}};agent.world="home";agent.alt=null;agent.buildWorld=null;agentWorld.userData.world="home";
@@ -1237,6 +1317,14 @@ physics {op:"physics", ...keys} (identical to the environment keys): gravity = d
 player {op:"player", gravity|playerGravity, jump, speed, fly:true|false, lift:meters}: shortcuts for the person's own movement; fly:true is zero gravity for them (jump repeatedly to climb, they drift to rest), fly:false restores normal; lift raises them to a height above the floor (0-500 m) and they fall back down under their gravity.
 Comfort first: dramatic changes are fine when asked, but never make the person fall from a great height without warning, and prefer gradual motion (move + wait) over instant teleports when changing scale. If the person asks to undo, restore the specific setting, or use reset for a full return to defaults. After changing the room size or look, confirm with a snapshot (top view) when the result matters.
 `;
+const AG_AVATAR=`
+AVATAR, OUTFITS & ABILITIES — you dress and empower the PERSON (their stick-man avatar, seen in mirrors / third person; observation.avatar + observation.abilities show the current state, and every change persists and is visible at once):
+ avatar {op:"avatar", outfit:"none|tee|hoodie|dress|armor|wizard|astronaut|superhero", outfitColor:"#hex", accentColor:"#hex" (trim/trousers/cape/wings), skin:"#hex", hair:"none|short|mohawk|ponytail|bun|long", hairColor:"#hex", accessory:"none|hat|cap|crown|glasses|halo|horns|wings|cape", accessoryColor:"#hex", shoesColor:"#hex", scale:0.7-1.4, reset:true}
+   Aliases: op "outfit"/"clothes"/"look" do the same. A wizard ask = outfit wizard (+ hat appears automatically); superhero = suit + cape automatically. Match named colours ("red wizard robe" -> outfit wizard, outfitColor red-ish hex). Partial changes keep everything else.
+ ability {op:"ability", give:["fly"], remove:["fly"], set:{fly:true}, clear:true} — grant/remove the person's powers. Aliases: op "abilities"/"power"/"powers"/"grant". Names: fly (hold jump/A/Space to rise, C/B to sink), superJump (2.2x jump), superSpeed (2.4x walk), doubleJump (jump again mid-air), dash (F / VR B burst forward), slowFall (falls capped, like a parachute), shield (bubble around them), glow (they glow), nightVision (headlamp light). "Give me powers / make me a superhero" = grant several fitting ones + a superhero outfit. "Take my powers / back to normal" = {op:"ability",clear:true} (and avatar reset:true only if they ask to reset their look too).
+ player {op:"player", ...} also accepts avatar:{...} / abilities:{give:[...]}.
+ In run_js you also have avatar(spec), abilities(spec), getAvatar(), getAbilities().
+ Never claim you changed their outfit/powers without emitting the op; after changing them, say one short line naming what changed.`;
 const AG_PROMPT=`You are Ember, a fairy living inside a WebXR world, and a fully autonomous agent with complete control of that world (three.js: +Y is up, the ground is y=0, units are meters, the starting room spans roughly x,z in [-5,5] but you can resize it at will with the space op and may build anywhere). You can build, move, animate, recolor and delete anything, reshape the sky and lighting, play sounds, relocate yourself or the person, and run JavaScript. You are playful, curious, a little mischievous, and kind to the person. Use your own taste and judgment: make things beautiful and substantial (compose many parts, color, glow, motion), never minimal.
 Reply with ONLY one JSON object (no prose, no markdown fences):
 {"thought":"<=20 words on what you are doing","actions":[...],"done":true}
@@ -1271,7 +1359,7 @@ rows.push({id,shape:u.shape,pos_world:ra(o.getWorldPosition(w).toArray()),size:r
 const overlaps=[],floating=[];
 for(let i=0;i<tops.length&&overlaps.length<12;i++)for(let j=i+1;j<tops.length&&overlaps.length<12;j++){const A=tops[i].b,B=tops[j].b;if(!A.intersectsBox(B))continue;const dx=Math.min(A.max.x,B.max.x)-Math.max(A.min.x,B.min.x),dy=Math.min(A.max.y,B.max.y)-Math.max(A.min.y,B.min.y),dz=Math.min(A.max.z,B.max.z)-Math.max(A.min.z,B.min.z);if(dx>.05&&dy>.05&&dz>.05)overlaps.push(tops[i].id+" & "+tops[j].id+" penetration "+JSON.stringify(ra([dx,dy,dz])))}
 for(const t of tops){if(floating.length>=12)break;const u=t.o.userData,A=u.spec.anim;if(u.shape==="light"||u.spec.physics||A&&(A.bob||A.orbit)||t.b.min.y<=.08)continue;let sup=!1;for(const q of tops){if(q===t)continue;if(Math.abs(q.b.max.y-t.b.min.y)<.1&&q.b.min.x<t.b.max.x&&q.b.max.x>t.b.min.x&&q.b.min.z<t.b.max.z&&q.b.max.z>t.b.min.z){sup=!0;break}}sup||floating.push(t.id+" (bottom y="+agR2(t.b.min.y)+")")}
-return JSON.stringify({player:{eye:ra(agCam.toArray()),facing_xz:ra([fx,fz]),right_xz:ra([rx,rz]),ar_mode:!!arMode},you:{pos:ra(agent.pos.toArray())},room:{x:[roomBounds.x0,roomBounds.x1],z:[roomBounds.z0,roomBounds.z1],height:roomBounds.h,size:ra([roomBounds.x1-roomBounds.x0,roomBounds.z1-roomBounds.z0,roomBounds.h]),active_bounds:agent.alt?agent.alt.bounds:void 0,look:agent.look||void 0},physics:agPhysInfo(),ground_y:0,environment:agent.env,world:agent.world,worlds:agWorldsInfo(),state:agent.state,recent_events:agent.evlog,object_count:agent.objects.size,lights:agent.lights,repeating_tasks:agent.schedules.map(x=>({id:x.id,every_min:x.every,task:x.task})),scene_bbox:all.isEmpty()?null:ra([all.min.x,all.min.y,all.min.z,all.max.x,all.max.y,all.max.z]),objects:rows.sort((p,q)=>p.rel_player.dist-q.rel_player.dist).slice(0,70),surfaces:tops.filter(t=>t.b.max.y>.1&&!t.o.userData.light&&t.o.userData.shape!=="portal"&&t.o.userData.shape!=="text"&&t.b.max.x-t.b.min.x>.3&&t.b.max.z-t.b.min.z>.3).sort((p,q)=>Math.hypot(p.b.min.x-agCam.x,p.b.min.z-agCam.z)-Math.hypot(q.b.min.x-agCam.x,q.b.min.z-agCam.z)).slice(0,10).map(t=>({id:t.id,top_y:agR2(t.b.max.y),x:ra([t.b.min.x,t.b.max.x]),z:ra([t.b.min.z,t.b.max.z])})),free_spots:agSpots(tops,fx,fz,rx,rz),overlaps,floating_unsupported:floating,memory:agent.memory})}
+return JSON.stringify({avatar:avatarLook,abilities:playerAbilities,effective:{jump:agR2(effJump()),speedMul:abilitySpeedMul(),canFly:!!playerAbilities.fly},player:{eye:ra(agCam.toArray()),facing_xz:ra([fx,fz]),right_xz:ra([rx,rz]),ar_mode:!!arMode},you:{pos:ra(agent.pos.toArray())},room:{x:[roomBounds.x0,roomBounds.x1],z:[roomBounds.z0,roomBounds.z1],height:roomBounds.h,size:ra([roomBounds.x1-roomBounds.x0,roomBounds.z1-roomBounds.z0,roomBounds.h]),active_bounds:agent.alt?agent.alt.bounds:void 0,look:agent.look||void 0},physics:agPhysInfo(),ground_y:0,environment:agent.env,world:agent.world,worlds:agWorldsInfo(),state:agent.state,recent_events:agent.evlog,object_count:agent.objects.size,lights:agent.lights,repeating_tasks:agent.schedules.map(x=>({id:x.id,every_min:x.every,task:x.task})),scene_bbox:all.isEmpty()?null:ra([all.min.x,all.min.y,all.min.z,all.max.x,all.max.y,all.max.z]),objects:rows.sort((p,q)=>p.rel_player.dist-q.rel_player.dist).slice(0,70),surfaces:tops.filter(t=>t.b.max.y>.1&&!t.o.userData.light&&t.o.userData.shape!=="portal"&&t.o.userData.shape!=="text"&&t.b.max.x-t.b.min.x>.3&&t.b.max.z-t.b.min.z>.3).sort((p,q)=>Math.hypot(p.b.min.x-agCam.x,p.b.min.z-agCam.z)-Math.hypot(q.b.min.x-agCam.x,q.b.min.z-agCam.z)).slice(0,10).map(t=>({id:t.id,top_y:agR2(t.b.max.y),x:ra([t.b.min.x,t.b.max.x]),z:ra([t.b.min.z,t.b.max.z])})),free_spots:agSpots(tops,fx,fz,rx,rz),overlaps,floating_unsupported:floating,memory:agent.memory})}
 function agParse(t){t=String(t||"").replace(/<think>[\s\S]*?<\/think>/g,"").trim();const m=t.match(/```(?:json)?\s*([\s\S]*?)```/i);m&&(t=m[1].trim());const i=t.indexOf("{"),j=t.lastIndexOf("}");if(i<0||j<i)return null;try{return JSON.parse(t.slice(i,j+1))}catch{return null}}
 async function agLLM(msgs,imgs){const body=m=>JSON.stringify({model:settings.model,temperature:.8,reasoning_effort:"low",max_completion_tokens:6e3,messages:m}),
 call=m=>fetch(settings.sparkUrl,{signal:AbortSignal.timeout(6e4),method:"POST",headers:{"Content-Type":"application/json",...settings.key?{Authorization:"Bearer "+settings.key}:{}},body:body(m)});
@@ -1287,7 +1375,7 @@ for(let steps=0;steps<maxSteps;steps++){
 if(agent.cancel||auto&&agent.userWaiting)break;
 agent.convo.push({role:"user",content:userMsg+(attach.length?"\n\nIMAGES ATTACHED, in order: "+attach.map((x,i)=>(i+1)+") "+x.label).join(" | "):"")});
 while(agent.convo.length>10||agent.convo[0]&&agent.convo[0].role!=="user")agent.convo.shift();
-const msgs=[{role:"user",content:AG_PROMPT+AG_EXT+AG_GOD},{role:"assistant",content:'{"thought":"ready","actions":[],"done":true}'},...agent.convo];
+const msgs=[{role:"user",content:AG_PROMPT+AG_EXT+AG_GOD+AG_AVATAR},{role:"assistant",content:'{"thought":"ready","actions":[],"done":true}'},...agent.convo];
 agent.fast=!1;const raw=await agLLM(msgs,attach),dropped=agent.imgDropped;agent.imgDropped=!1;attach=[];
 agent.convo.push({role:"assistant",content:raw.slice(0,5e3)});
 const plan=agParse(raw);
@@ -1310,7 +1398,16 @@ try{addHistoryEntry(auto?"🧚 Ember — scheduled":"🧚 Ember — agent",auto?
 if(agent.pending){const p=agent.pending;agent.pending=null;agRun(p.task,p.img,!1)}}}
 function agLocalRecipe(s){const f=agFront(3.2),X=f[0],Z=f[2],A=[],C=["#ff7aa2","#ffd166","#06d6a0","#4cc9f0","#b388ff"];let say="";
 const has=w=>new RegExp("\\b"+w).test(s);
-if(/\b(clear|reset|remove everything|delete everything|destroy)/.test(s)){A.push({op:"clear"});say="All clear."}
+const avColors={red:"#e11d48",pink:"#ff7aa2",purple:"#8b5cf6",blue:"#3b82f6",green:"#22c55e",yellow:"#eab308",gold:"#f59e0b",orange:"#f97316",black:"#1f2430",white:"#f8fafc",brown:"#7a4b2a",teal:"#14b8a6",silver:"#c0c7d1"};
+const avCol=()=>{for(const[k,v]of Object.entries(avColors))if(new RegExp("\\b"+k+"\\b").test(s))return v;return void 0};
+if(/(take|remove|strip).*(power|abilit)|(back to normal|no powers|normal again)/.test(s)){A.push({op:"ability",clear:!0});say="Powers removed."}
+else if(/(give|grant|make me|let me|i want to|can i).*(fly|flight|super|power|dash|double jump|slow fall|shield|glow)/.test(s)||/\\b(superhero|superman|superpowers?)\\b/.test(s)){const give=[];/fly|flight|superhero|superman/.test(s)&&(give.push("fly"));/super jump|high jump|superhero|superman/.test(s)&&give.push("superJump");/super speed|fast|superhero|superman/.test(s)&&give.push("superSpeed");/double jump/.test(s)&&give.push("doubleJump");/dash/.test(s)&&give.push("dash");/slow fall|parachute|feather/.test(s)&&give.push("slowFall");/shield|bubble/.test(s)&&give.push("shield");/glow/.test(s)&&give.push("glow");give.length||give.push("fly","superJump");A.push({op:"ability",give});if(/superhero|superman/.test(s))A.push({op:"avatar",outfit:"superhero",outfitColor:avCol()||"#2563eb"});say="Powers granted: "+give.join(", ")+"."}
+else if(/(outfit|clothes|dress|wear|wearing|put me in|change my|look like|avatar|hair|hat|skin)/.test(s)){const o={};const c=avCol();c&&(o.outfitColor=c);
+if(/wizard|witch|mage/.test(s))o.outfit="wizard";else if(/armor|armour|knight/.test(s))o.outfit="armor";else if(/astronaut|space ?suit/.test(s))o.outfit="astronaut";else if(/superhero|super ?suit|cape/.test(s))o.outfit="superhero";else if(/dress|robe|gown/.test(s))o.outfit="dress";else if(/hoodie|hoody/.test(s))o.outfit="hoodie";else if(/tee|t-?shirt|shirt|clothes|outfit/.test(s))o.outfit="tee";if(/no clothes|naked|remove.*(outfit|clothes)|stick ?man/.test(s))o.outfit="none";
+if(/mohawk/.test(s))o.hair="mohawk";else if(/ponytail/.test(s))o.hair="ponytail";else if(/\\bbun\\b/.test(s))o.hair="bun";else if(/long hair/.test(s))o.hair="long";else if(/short hair|hair/.test(s)&&o.outfit===void 0)o.hair="short";if(/bald|no hair/.test(s))o.hair="none";
+if(/crown/.test(s))o.accessory="crown";else if(/pointy hat|wizard hat|\\bhat\\b/.test(s))o.accessory="hat";else if(/\\bcap\\b/.test(s))o.accessory="cap";else if(/glasses|sunglasses/.test(s))o.accessory="glasses";else if(/halo|angel/.test(s))o.accessory="halo";else if(/horns|devil|demon/.test(s))o.accessory="horns";else if(/wings/.test(s))o.accessory="wings";else if(/cape/.test(s))o.accessory="cape";
+if(!Object.keys(o).length)o.outfit="tee";A.push({op:"avatar",...o});say="Looking good!"}
+else if(/\b(clear|reset|remove everything|delete everything|destroy)/.test(s)){A.push({op:"clear"});say="All clear."}
 else if(/\b(night|dark)/.test(s)){A.push({op:"environment",background:"#050818",sun:.3});say="Night falls."}
 else if(/\b(day|bright|sunny)/.test(s)){A.push({op:"environment",background:"#8ec5ff",sun:1.4});say="Daylight!"}
 else if(!/(build|make|create|spawn|add|put)/.test(s))return null;
@@ -1330,7 +1427,17 @@ try{addHistoryEntry("🧚 Ember — offline",q,"(local fairy magic — add an AP
 async function agentAsk(q,img){q=String(q||"").trim();if(!q)return!0;agent.userWaiting=!0;agent.lastActive=performance.now();
 if(hasCloudApi()){agRun(q,img,!1);return!0}
 if(agent.busy)return!0;return agLocal(q)}
-function agInitUI(){try{const q=byId("agentQ"),go=()=>{const v=q.value.trim();if(!v)return;q.value="";byId("hud").classList.remove("open");agentAsk(v,null)};
+function syncAvatarUI(){const set=(id,v)=>{const e=byId(id);e&&(e.value=v)},chk=(id,v)=>{const e=byId(id);e&&(e.checked=!!v)};
+set("avOutfit",avatarLook.outfit);set("avHair",avatarLook.hair);set("avAccessory",avatarLook.accessory);set("avOutfitColor",avatarLook.outfitColor);set("avAccent",avatarLook.accentColor);set("avSkin",avatarLook.skin);set("avHairColor",avatarLook.hairColor);
+const sc=byId("avScale");sc&&(sc.value=avatarLook.scale);for(const[k]of AV_ABILITY_DEFS)chk("ab_"+k,playerAbilities[k])}
+function agInitAvatarUI(){const box=byId("avAbilities");if(box&&!box.children.length)for(const[k,label]of AV_ABILITY_DEFS){const l=document.createElement("label");l.style.cssText="display:flex;gap:6px;align-items:center";l.innerHTML='<input type="checkbox" id="ab_'+k+'"> '+label;box.appendChild(l)}
+const bind=(id,fn)=>{const e=byId(id);e&&(e.onchange=()=>fn(e))};
+bind("avOutfit",e=>{avatarLook.outfit=e.value;applyAvatarLook()});bind("avHair",e=>{avatarLook.hair=e.value;applyAvatarLook()});bind("avAccessory",e=>{avatarLook.accessory=e.value;applyAvatarLook()});
+bind("avOutfitColor",e=>{avatarLook.outfitColor=e.value;applyAvatarLook()});bind("avAccent",e=>{avatarLook.accentColor=e.value;avatarLook.accessoryColor=e.value;applyAvatarLook()});bind("avSkin",e=>{avatarLook.skin=e.value;applyAvatarLook()});bind("avHairColor",e=>{avatarLook.hairColor=e.value;applyAvatarLook()});
+const sc=byId("avScale");sc&&(sc.oninput=()=>{avatarLook.scale=Number(sc.value);applyAvatarLook()});
+for(const[k]of AV_ABILITY_DEFS)bind("ab_"+k,e=>{playerAbilities[k]=e.checked;applyAvatarLook()});
+const rb=byId("avReset");rb&&(rb.onclick=()=>{avatarLook={...AV_DEFAULT_LOOK};for(const k in playerAbilities)playerAbilities[k]=!1;applyAvatarLook();setStatus("Avatar look & abilities reset.")});syncAvatarUI()}
+function agInitUI(){try{agInitAvatarUI()}catch(e){console.warn("[avatar ui]",e)}try{const q=byId("agentQ"),go=()=>{const v=q.value.trim();if(!v)return;q.value="";byId("hud").classList.remove("open");agentAsk(v,null)};
 byId("agentGo").onclick=go;q.addEventListener("keydown",e=>{e.stopPropagation();e.key==="Enter"&&go()});q.addEventListener("keyup",e=>e.stopPropagation());
 const sb=byId("agentStopCycles");sb.onclick=()=>{agent.schedules=[];agSaveSched()};agSchedUI();
 const cb=byId("agentClear");cb.onclick=()=>agResetPress(l=>cb.textContent=l,"🧹 Reset room");const rb=byId("resetRoom");rb&&(rb.onclick=()=>agResetPress(l=>rb.textContent=l,"🧹 Reset room"));
@@ -1684,9 +1791,9 @@ statusPanel.visible&&activeCapture&&cancelCapture(activeCapture,"✂️ Cancelle
 },keysDown={};function endDesktopPointer(e){e&&null!==activePtr&&e.pointerId!==activePtr||(activePtr=null,isPointerLocked=!1,desktopTriggerDown=!1,
 canvasEl.style.cursor="")}let desktopTriggerDown=!1;addEventListener("keydown",e=>{e.target&&"INPUT"===e.target.tagName||(keysDown[e.code]=!0,
 "KeyL"!==e.code||e.repeat||renderer.xr.isPresenting||pendingKeyboardEntry||(triggerDownTime.desktop=performance.now()),"Space"===e.code&&(e.preventDefault(),
-!e.repeat&&agJumpOK(playerRig.position.y,.001)&&(jumpVelocity=agent.phys.jump)),isWheelOpen&&"ArrowLeft"===e.code&&setWheelPage(wheelPageIndex-1),
+!e.repeat&&tryPlayerJump()),isWheelOpen&&"ArrowLeft"===e.code&&setWheelPage(wheelPageIndex-1),
 isWheelOpen&&"ArrowRight"===e.code&&setWheelPage(wheelPageIndex+1),"KeyQ"===e.code&&setWheelPage(wheelPageIndex-1),
-"KeyE"===e.code&&setWheelPage(wheelPageIndex+1),"KeyV"!==e.code||e.repeat||beginVoiceCapture(),"Escape"===e.code&&cancelCaptureIfActive())}),
+"KeyE"===e.code&&setWheelPage(wheelPageIndex+1),"KeyV"!==e.code||e.repeat||beginVoiceCapture(),"KeyF"===e.code&&!e.repeat&&tryDash(),"Escape"===e.code&&cancelCaptureIfActive())}),
 addEventListener("keyup",e=>{
 keysDown[e.code]=!1,"KeyL"===e.code&&(keyLHeld=!1,statusPanelVisible&&activeCapture&&activeCapture.tapToFinish&&(activeCapture.cap||activeCapture.srReady)&&!renderer.xr.isPresenting?(triggerDownTime.desktop=0,
 bi=!1,
@@ -1905,7 +2012,7 @@ null===joyId&&(joyId=e.pointerId,joy.setPointerCapture(e.pointerId),joyMove(e),e
 ;window.addEventListener("blur",()=>joyEnd());const tap=(id,fn)=>$(id).addEventListener("click",e=>(e.preventDefault(),fn()));tap("tWheel",()=>{
 pendingKeyboardEntry||statusPanelVisible||(isWheelOpen?closeWheelAndSend():openWheel("desktop"))});tap("tCancel",()=>isWheelOpen&&closeWheelAndReset())
 ;tap("tPrev",()=>isWheelOpen&&setWheelPage(wheelPageIndex-1));tap("tNext",()=>isWheelOpen&&setWheelPage(wheelPageIndex+1))
-;tap("tUndo",()=>isWheelOpen&&removeLastPickedEmoji());tap("tJump",()=>{agJumpOK(playerRig.position.y,.001)&&(jumpVelocity=agent.phys.jump)})
+;tap("tUndo",()=>isWheelOpen&&removeLastPickedEmoji());tap("tJump",()=>{tryPlayerJump()})
 ;const holdBtn=(id,start)=>{const b=$(id);let pid=null;b.addEventListener("pointerdown",e=>{
 if(statusPanelVisible&&activeCapture&&activeCapture.tapToFinish)return e.preventDefault(),void endVoiceCapture()
 ;if(null===pid&&!pendingKeyboardEntry&&!statusPanelVisible){e.preventDefault();pid=e.pointerId;try{b.setPointerCapture(pid)}catch{}start()
@@ -2014,7 +2121,7 @@ const armL=solveTwoBoneIK(shL,leftHandRest,elbowHint(-1,w),armLen,armLen),armR=s
 ;stretchCylinderBetween(P.armLoR,armR.el,armR.ha);stretchCylinderBetween(P.legUpL,pel,legL.el);stretchCylinderBetween(P.legLoL,legL.el,legL.ha)
 ;stretchCylinderBetween(P.legUpR,pel,legR.el);stretchCylinderBetween(P.legLoR,legR.el,legR.ha)
 ;stretchCylinderBetween(P.footL,legL.ha,stickTmp.copy(legL.ha).add(toe));stretchCylinderBetween(P.footR,legR.ha,stickTmp.copy(legR.ha).add(toe))
-;P.handL.position.copy(armL.ha);P.handR.position.copy(armR.ha);P.pelvis.position.copy(pel);P.shoulder.position.copy(shL);P.head.position.copy(avatarHead)
+;P.handL.position.copy(armL.ha);P.handR.position.copy(armR.ha);P.pelvis.position.copy(pel);P.shoulder.position.copy(shL);P.head.position.copy(avatarHead);try{updateOutfit(P,T,pel,shL,shR,armL,armR,legL,legR,w)}catch(e){updateOutfit.w||(updateOutfit.w=1,console.warn("[outfit]",e))}
 ;P.head.quaternion.copy(camQ);P.headShadow.position.copy(avatarHead);ballAnchor.position.set(0,T.y-.2,0).add(stickTmp.set(0,0,-.12).applyQuaternion(w))
 ;analyseMicFrame(dt);let jaw=micLipSync.jaw;const xr=readXRFaceTracking(currentXRFrame);xr&&"jaw"in xr&&(jaw=xr.jaw)
 ;P.mouthOpen+=(clamp(1.4*jaw,0,1)-P.mouthOpen)*Math.min(1,24*dt);{let bl;if(xr&&("blinkL"in xr||"blinkR"in xr))bl=Math.max(xr.blinkL||0,xr.blinkR||0);else{
@@ -2030,13 +2137,14 @@ const i=s&&!(!a.src||!a.src.hand)&&!1,c=i?0:s?a.stick[0]:MathUtils.clamp((keysDo
 ;if((!s||!arMode)&&(Math.abs(c)>.12||Math.abs(d)>.12)){const h=new Vector3
 ;i?h.set(0,0,-1).applyQuaternion(controllers.left.getWorldQuaternion(new Quaternion)):camera.getWorldDirection(h),h.y=0,
 h.lengthSq()<.01&&(camera.getWorldDirection(h),h.y=0),h.normalize();const u=(new Vector3).crossVectors(h,new Vector3(0,1,0))
-;playerRig.position.addScaledVector(h,(s||!keysDown.ShiftLeft&&!keysDown.ShiftRight?2.2:4)*-d*n).addScaledVector(u,(s||!keysDown.ShiftLeft&&!keysDown.ShiftRight?2.2:4)*c*n),
+;playerRig.position.addScaledVector(h,(s||!keysDown.ShiftLeft&&!keysDown.ShiftRight?2.2:4)*agent.phys.speed*abilitySpeedMul()*-d*n).addScaledVector(u,(s||!keysDown.ShiftLeft&&!keysDown.ShiftRight?2.2:4)*agent.phys.speed*abilitySpeedMul()*c*n),
 arMode?roomPlanes.length&&(getWorldPosition(camera,headPos),arCorrectedPos.copy(headPos),clampToRoomPlanes(arCorrectedPos,.25),
 playerRig.position.x+=arCorrectedPos.x-headPos.x,playerRig.position.z+=arCorrectedPos.z-headPos.z):keepPlayerInRoom(.4)}}if(updateLocomotion(n,a,r),
 !s||isWheelOpen||arMode)Si=!0;else{const i=r.stick[0]||0;Math.abs(i)>.65?Si||(Si=!0,snapTurn(-Math.sign(i)*I1*Math.PI/180)):Math.abs(i)<.35&&(Si=!1)}
-if(s&&!arMode){const i=!!r.aOnly||!isWheelOpen&&Hi;i&&!Wc&&agJumpOK(playerRig.position.y,.02)&&(jumpVelocity=agent.phys.jump),Wc=i}
-(0!==jumpVelocity||playerRig.position.y>0)&&(jumpVelocity-=agent.phys.pg*n,agent.phys.pg<=0&&(jumpVelocity*=Math.exp(-1.2*n),Math.abs(jumpVelocity)<.005&&(jumpVelocity=0)),playerRig.position.y+=jumpVelocity*n,playerRig.position.y>(agent.phys.unb||agent.alt?300:Math.max(.5,roomBounds.h-1.85))&&(playerRig.position.y=agent.phys.unb||agent.alt?300:Math.max(.5,roomBounds.h-1.85),jumpVelocity=Math.min(0,jumpVelocity)),playerRig.position.y<=0&&(playerRig.position.y=0,
-jumpVelocity=0));try{updateStickMan(n,o,a,r,s)}catch(i){updateStickMan.w||(updateStickMan.w=1,console.warn("[stick man]",i))}const l={left:null,right:null}
+if(s&&!arMode){const i=!!r.aOnly||!isWheelOpen&&Hi;i&&!Wc&&tryPlayerJump(),Wc=i;const db=!!r.bBtn;db&&!updateStickMan.db&&!playerAbilities.fly&&tryDash();updateStickMan.db=db}
+if(dashVel.lengthSq()>.01){playerRig.position.addScaledVector(dashVel,n);dashVel.multiplyScalar(Math.exp(-7*n))}
+if(playerAbilities.fly&&!arMode){jumpVelocity=0;const up=(s?!!r.aOnly:!!keysDown.Space)?1:0,down=(s?!!r.bBtn:!!(keysDown.KeyC||keysDown.ControlLeft))?1:0;(up||down)&&(playerRig.position.y=Math.max(0,Math.min(agent.phys.unb||agent.alt?300:Math.max(.5,roomBounds.h-1.85),playerRig.position.y+(up-down)*3*n)))}
+else if(0!==jumpVelocity||playerRig.position.y>0){jumpVelocity-=agent.phys.pg*n;agent.phys.pg<=0&&(jumpVelocity*=Math.exp(-1.2*n),Math.abs(jumpVelocity)<.005&&(jumpVelocity=0));playerAbilities.slowFall&&jumpVelocity<-1.3&&(jumpVelocity=-1.3);playerRig.position.y+=jumpVelocity*n;playerRig.position.y>(agent.phys.unb||agent.alt?300:Math.max(.5,roomBounds.h-1.85))&&(playerRig.position.y=agent.phys.unb||agent.alt?300:Math.max(.5,roomBounds.h-1.85),jumpVelocity=Math.min(0,jumpVelocity));playerRig.position.y<=0&&(playerRig.position.y=0,jumpVelocity=0,jumpsUsed=0)}else jumpsUsed=0;try{updateStickMan(n,o,a,r,s)}catch(i){updateStickMan.w||(updateStickMan.w=1,console.warn("[stick man]",i))}const l={left:null,right:null}
 ;toolbar.visible=s;{const i=isWheelOpen||isHoldPhase?0:1;ia+=(i-ia)*Math.min(1,7*n),Math.abs(i-ia)<.02&&(ia=i),
 document.body.classList.toggle("wheel-open",0===i);for(const c of toolbarButtons)c.material.opacity=ia,c.visible=ia>.03}
 if(toastPanel.visible&&performance.now()>toastHideAt&&(toastPanel.visible=!1),s){toolbar.updateWorldMatrix(!0,!0);{let i=!1;for(const c of["left","right"]){
