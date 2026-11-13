@@ -458,7 +458,7 @@ const m=new Mesh(new SphereGeometry(r,14,10),mat||lineMat);return m.castShadow=!
 ;const faceRig=buildFaceRig(head,faceMat,headMat),eyes=[faceRig.eyes[0].dot,faceRig.eyes[1].dot]
 ;const headShadow=new Mesh(new SphereGeometry(.1,16,12),new MeshBasicMaterial({colorWrite:!1,depthWrite:!1}));headShadow.castShadow=!0,g.add(headShadow)
 ;g.userData.parts={head:head,headShadow:headShadow,face:faceRig,eyeL:eyes[0],eyeR:eyes[1],blink:0,blinkIn:2+3*Math.random(),blinkT:-1,shoulder:ball(.016),
-neck:limb(),torso:limb(),armUpL:limb(),armLoL:limb(),armUpR:limb(),armLoR:limb(),legUpL:limb(),legLoL:limb(),legUpR:limb(),legLoR:limb(),footL:limb(),
+neck:limb(),clav:limb(),torso:limb(),armUpL:limb(),armLoL:limb(),armUpR:limb(),armLoR:limb(),legUpL:limb(),legLoL:limb(),legUpR:limb(),legLoR:limb(),footL:limb(),
 footR:limb(),handL:ball(.024,handMat),handR:ball(.024,handMat),pelvis:ball(.02),headMat:headMat,handMat:handMat,mouthOpen:0};
 const matOutfit=new MeshStandardMaterial({color:avatarLook.outfitColor,roughness:.75}),matAccent=new MeshStandardMaterial({color:avatarLook.accentColor,roughness:.8}),matHair=new MeshStandardMaterial({color:avatarLook.hairColor,roughness:.9}),matShoe=new MeshStandardMaterial({color:avatarLook.shoesColor,roughness:.7}),matAccessory=new MeshStandardMaterial({color:avatarLook.accessoryColor,roughness:.5,metalness:.3});
 const om=(geo,mat)=>{const m=new Mesh(geo,mat);m.castShadow=!0;m.visible=!1;g.add(m);return m},hm=(geo,mat)=>{const m=new Mesh(geo,mat);m.visible=!1;head.add(m);return m};
@@ -2357,26 +2357,25 @@ const d=playerAvatar.position.clone().sub(prev);d.y=0,avatarVelocity.lerp(d.divi
 const speed=avatarVelocity.length(),moveAmt=Math.min(1,speed/1.2);walkPhase+=speed*dt*4.2
 ;const dir=speed>.05?avatarVelocity.clone().setY(0).normalize():new Vector3(0,0,1);{const f=camera.getWorldDirection(new Vector3);if(Math.hypot(f.x,f.z)>.25){
 let dy=Math.atan2(-f.x,-f.z)-avatarYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy)),avatarYaw+=dy*Math.min(1,8*dt)}}
-const w=stickYawQuat.setFromAxisAngle(unitYAxis,avatarYaw),head=stickHeadC.clone().sub(playerAvatar.position);if(presenting){if(head.y>.3&&head.y<2.4){
+const sc=playerAvatar.scale.x||1,w=stickYawQuat.setFromAxisAngle(unitYAxis,avatarYaw),head=stickHeadC.clone().sub(playerAvatar.position).divideScalar(sc);if(presenting){if(head.y>.3&&head.y<2.4){
 const rawH=clamp(head.y,.45,2.3);if(null===avatarHeightM)avatarHeightM=rawH,avatarDisplayHeightM=rawH,
 avatarSquatHoldS=0;else if(rawH>avatarHeightM+.02)avatarHeightM=rawH,avatarSquatHoldS=0;else if(rawH<avatarHeightM-AVATAR_SQUAT_DROP_M){avatarSquatHoldS+=dt
 ;avatarSquatHoldS>=AVATAR_SHRINK_AFTER_S&&(avatarHeightM=rawH,avatarSquatHoldS=0)}else avatarSquatHoldS=0
 ;null===avatarDisplayHeightM&&(avatarDisplayHeightM=avatarHeightM)
 ;avatarDisplayHeightM+=(avatarHeightM-avatarDisplayHeightM)*Math.min(1,(avatarHeightM>avatarDisplayHeightM?10:6)*dt)
 ;Math.abs(avatarHeightM-avatarDisplayHeightM)<.002&&(avatarDisplayHeightM=avatarHeightM)}}else avatarHeightM=null,avatarDisplayHeightM=null,avatarSquatHoldS=0
-;const avatarHead=presenting&&null!==avatarDisplayHeightM?head.clone().setY(avatarDisplayHeightM):head,T=new Vector3(0,avatarHead.y-.2,0),k=clamp(T.y/1.38,.35,1.4),pel=new Vector3(0,Math.max(.18,T.y-.55*k),0),stride=.3*Math.sin(walkPhase)*moveAmt,lift=.09*moveAmt,footL=new Vector3(-.09,Math.max(0,Math.cos(walkPhase))*lift,0).applyQuaternion(w).addScaledVector(dir,stride),footR=new Vector3(.09,Math.max(0,-Math.cos(walkPhase))*lift,0).applyQuaternion(w).addScaledVector(dir,-stride),shL=new Vector3(0,T.y-.02,0),shR=new Vector3(0,T.y-.02,0),armLen=.4*k,legLen=.46*k
+;const avatarHead=presenting&&null!==avatarDisplayHeightM?head.clone().setY(avatarDisplayHeightM):head,T=new Vector3(0,avatarHead.y-.2,0),k=clamp(T.y/1.38,.35,1.4),pel=new Vector3(0,Math.max(.18,T.y-.55*k),0),stride=.3*Math.sin(walkPhase)*moveAmt,lift=.09*moveAmt,footL=new Vector3(-.09,Math.max(0,Math.cos(walkPhase))*lift,0).applyQuaternion(w).addScaledVector(dir,stride),footR=new Vector3(.09,Math.max(0,-Math.cos(walkPhase))*lift,0).applyQuaternion(w).addScaledVector(dir,-stride),shRight=new Vector3(1,0,0).applyQuaternion(w),shC=new Vector3(0,T.y,0),shSlump=new Vector3(0,-.06*k,-.03*k).applyQuaternion(w),shL=shC.clone().addScaledVector(shRight,-.125*k).add(shSlump),shR=shC.clone().addScaledVector(shRight,.125*k).add(shSlump),armLen=.34*k,legLen=.46*k
 ;const restL=new Vector3(-.2,.74*k,-.03).applyQuaternion(w),restR=new Vector3(.2,.74*k,-.03).applyQuaternion(w);if(presenting){
-const pl=ga.src?(ga.hj?ga.hj.p:getWorldPosition(controllers.left,new Vector3)).sub(playerAvatar.position):restL,pr=gb.src?(gb.hj?gb.hj.p:getWorldPosition(controllers.right,new Vector3)).sub(playerAvatar.position):restR,s=1-Math.exp(-28*dt)
-;leftHandRest.distanceToSquared(pl)>.36?leftHandRest.copy(pl):leftHandRest.lerp(pl,s),
-rightHandRest.distanceToSquared(pr)>.36?rightHandRest.copy(pr):rightHandRest.lerp(pr,s)}else{const reaching=K1(shR)
+const pl=ga.src?(ga.hj?ga.hj.p.clone():getWorldPosition(controllers.left,new Vector3)).sub(playerAvatar.position).divideScalar(sc):restL,pr=gb.src?(gb.hj?gb.hj.p.clone():getWorldPosition(controllers.right,new Vector3)).sub(playerAvatar.position).divideScalar(sc):restR
+;leftHandRest.copy(pl),rightHandRest.copy(pr)}else{const reaching=K1(shR)
 ;leftHandRest.lerp(isWheelOpen?getWheelRestPosition().sub(playerAvatar.position):restL,.2);rightHandRest.lerp(reaching?reachTarget:restR,reaching?.35:.2)}
-const armL=solveTwoBoneIK(shL,leftHandRest,elbowHint(-1,w),armLen,armLen),armR=solveTwoBoneIK(shR,rightHandRest,elbowHint(1,w),armLen,armLen),kneeHint=new Vector3(0,.15,-1).applyQuaternion(w),legL=solveTwoBoneIK(pel,footL.clone().setY(Math.max(footL.y,.03)),kneeHint,legLen,legLen),legR=solveTwoBoneIK(pel,footR.clone().setY(Math.max(footR.y,.03)),kneeHint,legLen,legLen),toe=new Vector3(0,0,-.12).applyQuaternion(w)
+const lenL=Math.min(1.3,Math.max(armLen,shL.distanceTo(leftHandRest)/1.97)),lenR=Math.min(1.3,Math.max(armLen,shR.distanceTo(rightHandRest)/1.97)),armL=solveTwoBoneIK(shL,leftHandRest,elbowHint(-1,w),lenL,lenL),armR=solveTwoBoneIK(shR,rightHandRest,elbowHint(1,w),lenR,lenR),kneeHint=new Vector3(0,.15,-1).applyQuaternion(w),legL=solveTwoBoneIK(pel,footL.clone().setY(Math.max(footL.y,.03)),kneeHint,legLen,legLen),legR=solveTwoBoneIK(pel,footR.clone().setY(Math.max(footR.y,.03)),kneeHint,legLen,legLen),toe=new Vector3(0,0,-.12).applyQuaternion(w)
 ;stretchCylinderBetween(P.torso,T,pel);stretchCylinderBetween(P.neck,T,stickTmp.copy(avatarHead).add(new Vector3(0,-.1,0)))
-;stretchCylinderBetween(P.armUpL,shL,armL.el);stretchCylinderBetween(P.armLoL,armL.el,armL.ha);stretchCylinderBetween(P.armUpR,shR,armR.el)
+;stretchCylinderBetween(P.clav,shL,shR);stretchCylinderBetween(P.armUpL,shL,armL.el);stretchCylinderBetween(P.armLoL,armL.el,armL.ha);stretchCylinderBetween(P.armUpR,shR,armR.el)
 ;stretchCylinderBetween(P.armLoR,armR.el,armR.ha);stretchCylinderBetween(P.legUpL,pel,legL.el);stretchCylinderBetween(P.legLoL,legL.el,legL.ha)
 ;stretchCylinderBetween(P.legUpR,pel,legR.el);stretchCylinderBetween(P.legLoR,legR.el,legR.ha)
 ;stretchCylinderBetween(P.footL,legL.ha,stickTmp.copy(legL.ha).add(toe));stretchCylinderBetween(P.footR,legR.ha,stickTmp.copy(legR.ha).add(toe))
-;P.handL.position.copy(armL.ha);P.handR.position.copy(armR.ha);P.pelvis.position.copy(pel);P.shoulder.position.copy(shL);P.head.position.copy(avatarHead);try{updateOutfit(P,T,pel,shL,shR,armL,armR,legL,legR,w)}catch(e){updateOutfit.w||(updateOutfit.w=1,console.warn("[outfit]",e))}
+;P.handL.position.copy(armL.ha);P.handR.position.copy(armR.ha);P.pelvis.position.copy(pel);P.shoulder.position.copy(shC);P.head.position.copy(avatarHead);try{updateOutfit(P,T,pel,shL,shR,armL,armR,legL,legR,w)}catch(e){updateOutfit.w||(updateOutfit.w=1,console.warn("[outfit]",e))}
 ;P.head.quaternion.copy(camQ);P.headShadow.position.copy(avatarHead);ballAnchor.position.set(0,T.y-.2,0).add(stickTmp.set(0,0,-.12).applyQuaternion(w))
 ;analyseMicFrame(dt);let jaw=micLipSync.jaw;const xr=readXRFaceTracking(currentXRFrame);xr&&"jaw"in xr&&(jaw=xr.jaw)
 ;P.mouthOpen+=(clamp(1.4*jaw,0,1)-P.mouthOpen)*Math.min(1,24*dt);{let bl;if(xr&&("blinkL"in xr||"blinkR"in xr))bl=Math.max(xr.blinkL||0,xr.blinkR||0);else{
